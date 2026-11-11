@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/8b6eb51b-cb1a-4744-9ecc-77d6b9c8062b
+
 # Treasure Hunters
 ### A research platform for bargaining and controlled social interaction
 
@@ -15,7 +19,7 @@ This repository contains the **oTree application** and serves as the main entry 
 
 Players negotiate over a treasure pool by adjusting their demands on a slider in real time. They can make concessions or ask for larger shares while watching their opponent, the demands they make, and the time remaining. Matching proposals trigger a three-second agreement confirmation. If the deadline passes without agreement, both players receive zero from that round.
 
-https://github.com/user-attachments/assets/2b360f2d-b70c-405a-817c-db148797667a
+https://github.com/user-attachments/assets/8db4e58b-e9b8-4212-b84d-78f81ad0cfb7
 
 #### Conflict and storyline
 
@@ -28,10 +32,10 @@ A walkthrough of the setup and storyline. A conflict of interest manipulation ha
   </tr>
   <tr>
     <td width="50%">
-      <video src="https://github.com/user-attachments/assets/4e105a42-df96-4bc8-a5d9-dd174bd93d56" controls></video>
+      <video src="https://github.com/user-attachments/assets/313dc50a-f19c-46b2-a0b9-29eac485d66b" controls></video>
  </td>
     <td width="50%">
-      <video src="https://github.com/user-attachments/assets/2f089816-98d1-4735-8985-c9fa5f70003f" controls></video>
+      <video src="https://github.com/user-attachments/assets/5c5ae587-1ec6-49c5-8c0f-a69f84ed6d5d" controls></video>
     </td>
   </tr>
 </table>
@@ -40,7 +44,7 @@ A walkthrough of the setup and storyline. A conflict of interest manipulation ha
 
 We use Ready Player Me 3D avatars to give participants an immersive experience. They select an avatar for the game, which we animate for them using MediaPipe facial landmarking.
 
-https://github.com/user-attachments/assets/2141080d-b46f-447e-b211-b704d7519218
+https://github.com/user-attachments/assets/35cf3de6-f45f-4432-ac78-0a6260c05edd
 
 ### Avatar phase and experimental smile-response
 
@@ -53,10 +57,10 @@ Participants are told they are playing with someone else from the session. In re
   </tr>
   <tr>
     <td width="50%">
-      <video src="https://github.com/user-attachments/assets/5bfcc227-a54e-40de-b46e-f0c1b08a58bd" controls></video>
+      <video src="https://github.com/user-attachments/assets/c066b939-899b-4b8f-a042-0f68745a43d4" controls></video>
     </td>
     <td width="50%">
-      <video src="https://github.com/user-attachments/assets/277340ba-d1f9-424e-85d8-78474841b4fe" controls></video>
+      <video src="https://github.com/user-attachments/assets/94bd7b00-e7e8-4536-824b-f387e946aa72" controls></video>
     </td>
   </tr>
 </table>
@@ -69,7 +73,7 @@ In a subsequent face-to-face phase, participants negotiate with each other in di
 
 The video shows the laboratory setting, with scientific-grade cameras (Basler pulse puA1280-54uc) recording participants' faces, lighting, and the computer terminals with the game interface. The video also demonstrates the progression of a face-to-face round. Participants are asked to remove the barrier on the table during round-start countdowns, and to place it back up after the round.
 
-https://github.com/user-attachments/assets/a5293b4b-e707-404e-b67e-ce56d3a15086
+https://github.com/user-attachments/assets/3d1434de-ce12-46e7-a4ef-4c49d3465003
 
 ### Protocol
 
@@ -90,13 +94,14 @@ Each match consists of two rounds against the same opponent. By the end of the s
   </tr>
   <tr>
     <td width="50%">
-      <video src="https://github.com/user-attachments/assets/d8750be5-093e-4168-bfde-c7fc0666397b" controls></video>
+      <video src="https://github.com/user-attachments/assets/39bbebd0-7c96-428b-9338-7fc54ada7237" controls></video>
     </td>
     <td width="50%">
-      <video src="https://github.com/user-attachments/assets/81f53193-14ca-4cde-abcc-11f385b8398a" controls></video>
+      <video src="https://github.com/user-attachments/assets/9a7c7c98-7ea3-4b5a-803c-c11609956420" controls></video>
     </td>
   </tr>
 </table>
+
 
 
 ## One platform, three connected projects
