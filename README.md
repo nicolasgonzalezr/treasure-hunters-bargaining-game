@@ -1,7 +1,3 @@
-
-
-https://github.com/user-attachments/assets/8b6eb51b-cb1a-4744-9ecc-77d6b9c8062b
-
 # Treasure Hunters
 ### A research platform for bargaining and controlled social interaction
 
