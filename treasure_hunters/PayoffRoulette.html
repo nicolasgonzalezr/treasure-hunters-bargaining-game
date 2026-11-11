@@ -1,0 +1,353 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{{ block content }}
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#_otree-title:empty {
+  display: none !important;
+}
+
+.otree-timer {
+  display: none;
+}
+
+.otree-body.container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+#instructionContainer {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);   
+  z-index: 999;
+/*  display: none; */
+}
+
+#instructionContainer.highlight{
+  background: transparent;
+}
+
+#instructionBox {
+  position: relative;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 40vh;
+  width: 100vh;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #333;
+  border-radius: 1vh;
+  padding: 2vh;
+  font-size: 3.5vh;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+#instructionText {
+  text-align: center;
+}
+
+.instruction-buttons {
+  margin-top: 5vh;
+  display: flex;
+  gap: 2vh;
+  justify-content: center;
+}
+
+.instruction-buttons button {
+  font-size: 3vh;
+  margin-left: 1vh;
+  padding: 0.5vh 2vh;
+  cursor: pointer;
+}
+
+#rouletteContainer {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.95);
+  height: 10vh;
+  width: 30vw;
+  top: 60%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 1vh;
+  overflow: hidden;
+}
+
+#roulette {
+  position: relative;
+  top:0%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-end;
+  will-change: transform;
+}
+
+#roulette.spin {
+  animation: spinRoulette 10s ease-out forwards;
+}
+
+@keyframes spinRoulette {
+  0% {
+  transform: translateY(0);
+  }
+  100% {
+  transform: translateY(var(--itemOffset));
+  }
+}
+
+.slot-item {
+  height: 10vh;
+  width: 30vw;
+  font-size: 5vh;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.highlight {
+  z-index: 1000 !important;
+}
+
+</style>
+
+<div id="instructionContainer">
+  <div id="instructionBox">
+    <div id="instructionText"></div>
+    <div class="instruction-buttons">
+      <button id="prevBtn" type="button" onclick="prevStep()">Anterior</button>
+      <button id="nextBtn" type="button" onclick="nextStep()">Siguiente</button>
+    </div>
+  </div>
+</div>
+
+<div id="rouletteContainer">
+  <div id="roulette"></div>
+</div>
+
+<form id="advanceForm" method="post" class="hidden">
+  <button type="submit" class="hidden" id="submitBtn"></button>
+</form>
+
+<script>
+
+let prevBtn, nextBtn, roulette, instructions;
+
+const isPractice = js_vars.isPractice;
+const transportation = js_vars.transportation;
+const payoffList = js_vars.payoffList;
+const payoffLabels = js_vars.payoffLabels;
+const payoffIndex = js_vars.payoffIndex;
+const payoff = payoffList[payoffIndex];
+const payoffRound = js_vars.payoffRound;
+//console.log('Index: ', payoffIndex, 'Payoff: ', payoffLabels[payoffIndex])
+
+let currentInstruction = 0;
+
+if (isPractice) {
+
+  instructions = [
+    {
+      text: "Al final de la sesión, se seleccionará una <strong>ronda al azar</strong> entre todas las que jugaste para determinar tu pago final.",
+      top: "50vh",
+      highlight: []
+    },
+    {
+      text: "Presiona 'Siguiente' para ver un ejemplo.",
+      top: "25vh",
+      highlight: ["#rouletteContainer"],
+    },
+    {
+      text: "🤞🤑🤞🤩🤞",
+      top: "25vh",
+      highlight: ["#rouletteContainer"],
+      onEnter: spinRoulette
+    },
+    {
+      text: `Si esta fuera la ronda final, tu pago sería <strong>${formatCLP(payoff + transportation)}</strong> 💰, ${formatCLP(payoff)} por la ronda de negociación seleccionada y ${formatCLP(transportation)} como compensación por movilización.`,
+      top: "25vh",
+      highlight: ["#rouletteContainer"],
+    },
+    {
+      text: `La ronda seleccionada <strong>será la misma para todos los jugadores</strong>. Por ejemplo, todos recibirían lo que obtuvieron en la ronda ${payoffRound}`,
+      top: "25vh",
+      highlight: ["#rouletteContainer"],
+    },
+    {
+      text: "Ojo 👀, estas dos primeras rondas de práctica que acabas de jugar <strong>no se considerarán</strong> para tu pago final.",
+      top: "50vh",
+      highlight: []
+    },
+    {
+      text: "Si tienes alguna duda, levanta la mano <strong>ahora</strong> para recibir asistencia de nuestro equipo 🙋.",
+      highlight: [],
+      background: [],
+      top: "50vh"
+    },
+    {
+      text: "Presiona 'Finalizar' para comenzar el juego.",
+      top: "50vh",
+      highlight: [],
+    }
+  ];
+
+} else {
+  instructions = [
+    {
+      text: "¡Hemos terminado! 👏👏👏 Presiona 'Siguiente' para ver tu pago final.",
+      top: "25vh",
+      highlight: ["#rouletteContainer"],
+    },
+    {
+      text: "🤞🤑🤞🤩🤞",
+      top: "25vh",
+      highlight: ["#rouletteContainer"],
+      onEnter: spinRoulette
+    },
+    {
+      text: `Tu pago final es <strong>${formatCLP(payoff + transportation)}</strong> 💰, ${formatCLP(payoff)} por la ronda de negociación seleccionada y ${formatCLP(transportation)} como compensación por movilización.`,
+      top: "25vh",
+      highlight: ["#rouletteContainer"],
+    },
+    {
+      text: "Muchas gracias por participar en este estudio sobre negociación 🤝, ya puedes salir de la sala.",
+      top: "50vh",
+      highlight: [],
+    }
+  ];
+}
+
+function showInstruction(index) {
+  const container = document.getElementById('instructionContainer');
+  const box = document.getElementById('instructionBox');
+  const text = document.getElementById('instructionText');
+  if (index < 0 || index >= instructions.length) return;
+
+  // Remove old highlights
+  document.querySelectorAll('.highlight').forEach(el => {
+    el.classList.remove('highlight');
+  });
+
+  // Apply new highlights
+  const instruction = instructions[index];
+  instruction.highlight.forEach(selector => {
+    document.querySelectorAll(selector).forEach(el => {
+      el.classList.add('highlight');
+    });
+  });
+
+  box.style.top = instruction.top || "50vh";
+  text.innerHTML = instruction.text;
+//  container.classList.remove('hidden'); #USED FOR INITIAL DELAY, REMOVE
+      
+  // Hide or show previous button
+  if (index === 0) {
+    prevBtn.classList.add('hidden');
+  } else {
+    prevBtn.classList.remove('hidden');
+  }
+
+  // Trigger the onEnter callback if present
+  if (typeof instruction.onEnter === "function") {
+    instruction.onEnter();
+  }
+}
+
+function nextStep() {
+  if (currentInstruction < instructions.length - 1) {
+    currentInstruction++;
+    if (currentInstruction === instructions.length - 1) {
+      if (isPractice) {
+        nextBtn.textContent = 'Finalizar';
+      } else {
+        nextBtn.classList.add('hidden');
+      }
+    }
+    showInstruction(currentInstruction);
+  } else if (currentInstruction === instructions.length - 1){
+    document.getElementById('submitBtn').click();
+  }
+}
+
+function prevStep() {
+  if (currentInstruction > 0) {
+    currentInstruction--;
+    nextBtn.textContent = 'Siguiente';
+    nextBtn.classList.remove('hidden')
+    showInstruction(currentInstruction);
+  }
+}
+
+function formatCLP(value) {
+  return '$' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+
+const totalSpins = 150;
+const totalRounds = payoffLabels.length;
+const fullSpins = Math.floor(totalSpins / totalRounds);
+const remainder = payoffLabels.slice(0, payoffIndex+1);
+const spinList = Array.from({ length: totalRounds * fullSpins },
+  (_, i) => payoffLabels[i % totalRounds]
+);
+const finalList = [...["🍋💰🎰⭐🍒"],...spinList, ...remainder]; //ADD A PLACEHOLDER FIRST ENTRY
+const finalLength = finalList.length;
+
+function spinRoulette() {
+  roulette.classList.add('spin');
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  prevBtn = document.getElementById('prevBtn');
+  nextBtn = document.getElementById('nextBtn');
+  roulette = document.getElementById('roulette');
+
+  finalList.forEach(text => {
+  const div = document.createElement('div');
+  div.className = 'slot-item';
+  div.innerHTML = text;
+  roulette.appendChild(div);
+  });
+
+  // LEAVE ONE ITEM SPAN LEFT
+  roulette.style.setProperty('--itemOffset', `-${100 - 100/finalLength}%`);
+
+  showInstruction(currentInstruction);
+});
+
+</script>
+
+
+{{ endblock }}
+
+

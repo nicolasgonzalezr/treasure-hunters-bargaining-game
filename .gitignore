@@ -1,0 +1,65 @@
+venv
+staticfiles
+./db.sqlite3
+.idea
+*~
+*.sqlite3
+_static_root
+_bots*s
+__temp*
+__pycache__/
+*.py[cod]
+.DS_Store
+*.otreezip.DS_Store
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# oTree / Django
+db.sqlite3
+*.sqlite3
+media/
+staticfiles/
+.otree/
+sessions/
+__temp__/
+
+# Logs / exports
+*.log
+*.csv
+*.tsv
+*.xlsx
+exports/
+raw_data/
+
+# Secrets
+.env
+.env.*
+*.key
+*.pem
+
+# Front-end
+node_modules/
+dist/
+build/
+
+# GLB AVATARS
+*.glb
+
+# Private key containing files
+/rest_key.env
+
+/treasure_hunters/backups/
+/treasure_hunters/BargainF2F copy.html
+/_static/AvatarAnimation/assets/AvatarWorker_backup.js

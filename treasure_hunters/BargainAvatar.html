@@ -1,0 +1,722 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block content %}
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#_otree-title:empty {
+  display: none !important;
+}
+
+.otree-timer {
+  display: none;
+}
+
+.otree-body.container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.scene {
+  display: flow-root;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100vh;			  /* responsive width */
+  width: auto;
+  max-width: 100vw;
+  aspect-ratio: 16 / 9;	 /* enforce 1280x720 shape */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  border-radius: 0px;
+}
+
+.scene-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.scene-layer.visible {
+  opacity: 1;
+}
+
+.overlay-text {
+  position: absolute;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+
+#sceneOverlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(255, 255, 255, 0.9);
+	pointer-events: none;
+}
+
+#avatarWrapper {
+  position: relative;
+  height: 62.5vh;
+  aspect-ratio: 1/1;
+  width: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow: hidden;
+  top: 0%;
+}
+
+#avatarContainer {
+  position: relative;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 110%;
+  aspect-ratio: 1/1;
+  width: auto;
+  filter: drop-shadow(0 7px 28px rgba(0,0,0,0.3));
+}
+
+#timer {
+	position: absolute;
+	top:50%;
+	left:50%;
+	width:105%;
+	height:105%;
+	transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+#timerBackground {
+	fill: transparent;
+	stroke: #27ae60;
+	stroke-width: 5;
+	stroke-dasharray: 339.292;
+}
+
+#timerProgress {
+	fill: none;
+	stroke: white;
+	stroke-width: 5.2;
+	stroke-linecap: butt;
+	stroke-dasharray: 339.292;
+	transition: stroke-dashoffset 1s linear;
+}
+
+/*
+#timerText {
+	background: transparent;
+	fill: black;
+	font-family: Consolas, 'Lucida Console', 'Courier New', monospace;
+	font-weight: bold;
+	transform: rotate(90deg);
+	transform-origin: center;
+} */
+
+#slider-wrapper {
+	position: relative;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 75%;
+	height: 20vh;
+	margin-top: 2.5vh;
+	background: transparent;
+}
+
+#custom-slider-container {
+	position: relative;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 75%;
+	height: 100%;
+}
+
+.track {
+	position: absolute;
+	height: 2vh;
+	background: #C8C4C1;
+	width: 100%;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	border-radius: 1vh;
+}
+
+#sliderTrack {
+	transition: background 0.5s ease;
+}
+
+#sliderTrack.slider-agree {
+	background: #27ae60 !important;
+}
+
+.thumb, .opponent-thumb {
+	position: absolute;
+	height: 7vh;
+	width: 7vh;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.thumb {
+	color: #2e86c1;
+}
+
+.opponent-thumb {
+	color: #CD5C5C;
+}
+
+.thumb svg, 
+.opponent-thumb svg {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+	fill: currentColor;
+}
+
+#sliderThumb.thumb-agree {
+	transition: color 0.5s ease;
+	color: #27ae60 !important;
+}
+
+#opponentThumb.thumb-agree {
+	transition: color 0.5s ease;
+	color: #27ae60 !important;
+}
+
+.marker {
+	position: absolute;
+	font-size: 2.75vh;
+	color: #333;
+	white-space: nowrap;
+}
+
+#playerMarker {
+	top: 0%;
+}
+
+#opponentMarker {
+	bottom: 0%;
+}
+
+.arrow {
+	position: absolute;
+	transform: translateX(-50%);
+}
+
+.label {
+	margin-left: 2.5vh; /* adjust as needed */
+}
+
+.gain-player {
+	color: #2e86c1;
+}
+
+.gain-partner {
+	color: #CD5C5C;
+}
+
+#buttonControls {
+	position: relative;
+	left: 50%;
+	transform: translateX(-50%);
+	height: 10vh;
+	width: 100vh;
+	max-width: 100vw;
+	text-align: center;
+	background: transparent;
+	margin-top: 2vh;
+}
+
+#buttonControls button {
+	font-size: 3.5vh;
+	color: black;
+	padding: 1vh 2.5vh;
+	margin: 0 2.5vh; /* this adds horizontal spacing */
+	cursor: pointer;
+}
+
+#kickOff {
+	position:absolute;
+	top:0%;
+	left:0%;
+	height:100vh;
+	width:100vw;
+	background:rgba(0,0,0,0.90);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	font-size: 50vh;
+	font-weight: bolder;
+	text-align: center;
+	color: #27ae60;
+	z-index: 2000;
+	transition: opacity 0.4s ease-in-out
+}
+
+.hidden {
+  display: none !important;
+}
+
+</style>
+
+<div id="kickOff"></div>
+
+<div class="scene">
+	<img id="layer-background" class="scene-layer" style="z-index:1">
+	<img id="layer-collapse" class="scene-layer" style="z-index:2">
+	<img id="layer-treasure" class="scene-layer" style="z-index:3">
+	<img id="layer-threat" class="scene-layer" style="z-index:4">
+	<img id="layer-player" class="scene-layer" style="z-index:5">
+	<img id="layer-opponent" class="scene-layer" style="z-index:6">
+	<img id="layer-pouch-object" class="scene-layer" style="z-index:7">
+	<img id="layer-pouch-indicator" class="scene-layer" style="z-index:8">
+	<img id="layer-dialogue" class="scene-layer" style="z-index:9">
+	<div id="treasure-indicator" class="overlay-text gold-text" style="z-index:10"></div>
+	<div id="dialogueBox" class="dialogue" style="z-index:11"></div>
+
+	<div id="sceneOverlay" style="z-index:12"></div>
+
+	<div id="avatarWrapper" style="z-index:13">
+		<div id="timer" style="z-index:14">
+			<svg width="100%" height="100%" viewBox="0 0 120 120">
+				<circle cx="60" cy="60" r="54" id="timerBackground"/>
+				<circle cx="60" cy="60" r="54" id="timerProgress" stroke-dashoffset="339.292"/>
+				{#<text x="50%" y="50%" font-size="28" text-anchor="middle" dominant-baseline="middle" id="timerText">{{ timer }}</text>#}
+			</svg>
+		</div>
+		<canvas id="avatarContainer" style="z-index:15"></canvas>
+	</div>
+
+	<div id="slider-wrapper" style="z-index: 13;">
+			
+		<div id="custom-slider-container">
+		{{ if conflict == "high" }}
+			<div class="track" id= "sliderTrack" style="width: 100%; background: #C8C4C1; z-index: 14;"></div>
+			<div class="opponent-thumb" id="opponentThumb" style="z-index: 15;">
+				{{ include 'global/pouch_thumb.svg' }}
+			</div>
+			<div class="thumb" id="sliderThumb" style="z-index: 16;">
+				{{ include 'global/pouch_thumb.svg' }}
+			</div>
+
+		{{ else }} <!-- Conflict is low -->
+			<div class="track" id= "backgroundTrack" style="width: 100%; background: rgba(204, 204, 204, 0.5); z-index: 13;"></div>
+			<div class="track" id= "sliderTrack" style="width: {{ restriction_percentage }}; background: #C8C4C1; z-index:14;"></div>
+			<div class="opponent-thumb" id="opponentThumb" style="height: 9vh; width: 9vh; z-index: 15;">
+				{{ include 'global/hand_thumb.svg' }}
+			</div>
+			<div class="thumb" id="sliderThumb" style="height: 9vh; width: 9vh; z-index: 16;">
+				{{ include 'global/hand_thumb.svg' }}
+			</div>
+
+		{{ endif }}
+		</div>
+		
+		<div class="marker" id="playerMarker" style="z-index: 13;">
+			<span class="arrow">▼</span>
+			<span class="label" id="playerLabel"></span>
+		</div>
+		
+		<div class="marker" id="opponentMarker" style="z-index: 13;">
+			<span class="arrow">▲</span>
+			<span class="label" id="opponentLabel"></span>
+		</div>
+		
+	</div>
+			
+	<div id="buttonControls" style="z-index: 13;">
+		<button type="button" onclick="adjustOffer(-1)"><strong>← Pedir</strong></button>
+		<button type="button" onclick="adjustOffer(1)"><strong>Ceder →</strong></button>
+	</div>
+
+</div>
+
+
+
+<form id="advanceForm" method="post" style="display: none;" >
+	<button type="submit" style="display: none;" id="submitBtn"></button>
+</form>
+
+
+<script>
+
+// CACHE IMAGES (PRELOAD)
+js_vars.paths.forEach(path => {
+  const img = new Image();
+  img.src = '/static/' + path;
+});
+
+
+const sliderWrapper = document.getElementById("slider-wrapper");
+const sliderContainer = document.getElementById("custom-slider-container");
+const thumb = document.getElementById("sliderThumb");
+const opponentThumb = document.getElementById("opponentThumb");
+const playerMarker = document.getElementById("playerMarker");
+const opponentMarker = document.getElementById("opponentMarker");
+
+const minOffer = js_vars.min_offer;
+const maxOffer = js_vars.max_offer;
+
+const step = js_vars.slider_step;
+
+let currentOffer = js_vars.my_offer;
+let opponentOffer = js_vars.opponent_offer;
+
+function positionThumb(value) {
+	return ((maxOffer - value) / (maxOffer - minOffer)) * 100;
+}
+
+function positionMarker(value) {
+	const relative = ((maxOffer - value) / (maxOffer - minOffer)) - 0.5;
+	const sliderWidth = sliderContainer.offsetWidth;
+	const wrapperWidth = sliderWrapper.offsetWidth;
+
+	const offset = relative * sliderWidth / wrapperWidth;
+	return 50 + offset * 100;
+}
+
+function updateDisplay(playerVal, opponentVal) {
+
+	const thumbPercent = positionThumb(playerVal);
+	const opponentThumbPercent = positionThumb(opponentVal);
+			
+	const markerPercent = positionMarker(playerVal);
+	const opponentMarkerPercent = positionMarker(opponentVal);
+
+	thumb.style.left = `${thumbPercent}%`;
+	opponentThumb.style.left = `${opponentThumbPercent}%`;
+	playerMarker.style.left = `${markerPercent}%`;
+	opponentMarker.style.left = `${opponentMarkerPercent}%`;
+
+	document.getElementById("playerLabel").innerHTML = `
+		Tú (<span class="gain-player">${formatCLP(playerVal)}</span> | <span class="gain-partner">${formatCLP(maxOffer - playerVal)}</span>)`;
+			
+	document.getElementById("opponentLabel").innerHTML = `
+		Otro &#x1F464; (<span class="gain-player">${formatCLP(opponentVal)}</span> | <span class="gain-partner">${formatCLP(maxOffer - opponentVal)}</span>)`;
+			
+}
+
+function sendOfferUpdate(newVal) {
+	liveSend({ action: "update_offer", offer: newVal });
+}
+
+function sendAvatarOffer(newVal) {
+	liveSend({ action: "avatar_offer", offer: newVal });
+}
+
+
+function adjustOffer(direction) {
+	const proposed = currentOffer - direction * step;
+			
+	let clamped = Math.min(maxOffer, Math.max(opponentOffer, proposed));
+		
+	sendOfferUpdate(clamped);  // Always send, even if unchanged
+			
+}
+
+function triggerConcession() { // TRIGGER AVATAR CONCESSION, STRICTLY INCREASING FROM 0
+	const proposed = opponentOffer + step;
+			
+	let clamped = Math.max(minOffer, Math.min(currentOffer, proposed));
+		
+	sendAvatarOffer(clamped);  // Always send, even if unchanged
+			
+}
+
+let isAgreementClose = false;
+
+function liveRecv(data) {
+
+	//console.log("🔄 Live message received:", data);
+			
+	if (data.advance === true) {
+		document.getElementById('submitBtn').click();
+		stopPinging();
+	}
+			
+	if (data.agreement_close === true && !isAgreementClose) {
+		//console.log("✅ agreement_close detected – starting ping and countdown");
+		isAgreementClose = true;
+		startCountdown();
+		startPinging();
+	} else if (data.agreement_close !== true && isAgreementClose) {
+		//console.log("❌ agreement broken – stopping ping");
+		isAgreementClose = false;
+		stopPinging();
+		stopCountdown();
+	}
+			
+			
+	if ('my_offer' in data && 'opponent_offer' in data) {
+		currentOffer = data.my_offer;
+		opponentOffer = data.opponent_offer;
+		updateDisplay(currentOffer, opponentOffer);
+	}
+
+}
+
+let pingInterval = null;
+
+function startPinging() {
+	//console.log("📡 startPinging triggered");
+	if (pingInterval === null) {
+		pingInterval = setInterval(() => {
+			//console.log("📤 Sending ping");
+			liveSend({ action: "ping" });
+		}, 1000);
+	}
+}
+
+function stopPinging() {
+	if (pingInterval !== null) {
+		clearInterval(pingInterval);
+		pingInterval = null;
+	}
+}
+
+function startCountdown() {
+	//console.log("⏳ startCountdown triggered");
+	document.getElementById("sliderTrack").classList.add("slider-agree");
+	document.getElementById("sliderThumb").classList.add("thumb-agree");
+	document.getElementById("opponentThumb").classList.add("thumb-agree");
+}
+
+function stopCountdown() {
+	document.getElementById("sliderTrack").classList.remove("slider-agree");
+	document.getElementById("sliderThumb").classList.remove("thumb-agree");
+	document.getElementById("opponentThumb").classList.remove("thumb-agree");
+}
+
+function formatCLP(value) {
+	return '$' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+function TriggerSmile() {
+	if (window.worker) {
+		window.worker.postMessage({ trigger: true });
+//		console.log("✅ Smile triggered")
+	} else {
+		console.log("Worker not in scope, smile trigger failed")
+	}
+}
+
+let circle;
+let timerText;
+let timerInterval;
+
+// Timer setup
+const duration = js_vars.timeout_seconds;
+const fullDashArray = 339.292;	
+let remaining = duration;	
+
+//console.log(circle.getAttribute('stroke-dashoffset'));
+
+function updateTimerDisplay() {
+	// KEEP COMMENTED WHILE TIMERTEXT IS DISABLED
+//		const mins = String(Math.floor(remaining / 60)).padStart(2, '0');
+//		const secs = String(remaining % 60).padStart(2, '0');
+//		timerText.textContent = `${mins}:${secs}`;
+
+	const offset = fullDashArray * ((remaining-1) / duration);
+			
+	circle.setAttribute('stroke-dashoffset', offset.toString());
+			
+	// console.log(circle.getAttribute('stroke-dashoffset'));
+}
+
+function startTimer() {
+	updateTimerDisplay();
+
+	timerInterval = setInterval(() => {
+		remaining -= 1;
+		if (remaining <= 0) {
+			clearInterval(timerInterval);
+//			timerText.textContent = "00:00";
+		} else {
+			updateTimerDisplay();
+		}
+	}, 1000);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+	circle = document.getElementById("timerProgress");
+
+	const kickOff = document.getElementById("kickOff");
+
+	let kickOffSec = js_vars.kickOff;
+
+	kickOff.textContent = kickOffSec;
+
+	const kickOffInterval = setInterval(() => {
+		kickOffSec -= 1;
+		if (kickOffSec <= 0) {
+			clearInterval(kickOffInterval);
+			kickOff.classList.add('hidden');
+			t0 = performance.now() * 0.001;				  // seconds
+			startTimer();
+			avatarConcession(duration, t0);
+		} else {
+			kickOff.textContent = kickOffSec;
+		}
+	}, 1000); 
+
+	const scene = js_vars.scene;
+
+	const layers = {
+		background: document.getElementById("layer-background"),
+		player_character: document.getElementById("layer-player"),
+		opponent_character: document.getElementById("layer-opponent"), 
+		pouch_indicator: document.getElementById("layer-pouch-indicator"),
+		pouch_object: document.getElementById("layer-pouch-object"),
+		treasure: document.getElementById("layer-treasure"),
+		threat: document.getElementById("layer-threat"),
+		dialogue_box: document.getElementById("layer-dialogue"),
+		collapse: document.getElementById("layer-collapse")
+	};
+
+	function showScene(scene) {
+		
+		for (let key in layers) {		 
+			if (scene[key]) {
+				layers[key].classList.remove('visible');
+				void layers[key].offsetWidth; // force reflow
+				layers[key].src = "/static/" + scene[key];
+				layers[key].classList.add('visible');
+				layers[key].style.visibility = 'visible';
+			} else {
+				layers[key].style.visibility = 'hidden';
+				layers[key].classList.remove('visible');
+			}
+		}
+			
+		document.getElementById("treasure-indicator").innerHTML = scene.treasure_indicator || "";
+
+	}
+			
+	showScene(scene);
+		
+	updateDisplay(currentOffer, opponentOffer);
+
+	let i = 0;
+	const concessionSchedule = js_vars.concessionSchedule; // seconds
+	let t0;
+	let j = 0;
+	// 7 spontaneous smile events, decreasing density / increasing refractory period (2 events 5+3, 2 events 6+3, 2 events 7+3,). 
+	const spontSmileSched = [
+		57+Math.random()*3, 
+		49+Math.random()*3, 
+		41+Math.random()*3, 
+		32+Math.random()*3, 
+		23+Math.random()*3, 
+		13+Math.random()*3, 
+		3+Math.random()*3
+	]
+
+	function avatarConcession(totalTime, startTime) {
+		const now = performance.now() * 0.001 - startTime;
+
+		const remaining = totalTime - now
+		
+		while (i < concessionSchedule.length && concessionSchedule[i] <= now) {
+			if (j < spontSmileSched.length && remaining <= spontSmileSched[j]) {
+				TriggerSmile();
+				j++;
+			}
+			triggerConcession();
+			i++;
+		}
+
+		if (i < concessionSchedule.length) {
+			const delayMs = (concessionSchedule[i] - now) * 1000;
+			setTimeout(() => avatarConcession(totalTime, startTime), delayMs);
+		}
+	}
+
+});
+
+</script>
+
+<script type="module">
+  const canvas = document.getElementById('avatarContainer');
+  const offscreen = canvas.transferControlToOffscreen();
+
+  const { width, height } = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+
+  const worker = new Worker("/static/AvatarAnimation/assets/AvatarWorker.js", { type: 'module' });
+  // make it visible to the non-module script
+  window.worker = worker;
+
+  let baseDraw;
+
+  if (js_vars.conflict == "high") {
+	baseDraw = 1;
+  } else {
+	baseDraw = 2;
+  }
+
+  worker.postMessage({
+	canvas: offscreen,
+	width: Math.round(width),
+	height: Math.round(height),
+	dpr,
+	avatarPath: "/static/global/avatars/glb/" + js_vars.avatarPath,
+	headerPath: "/static/AvatarAnimation/data/EyeHeader.json",
+	eyePath: `/static/AvatarAnimation/data/${baseDraw}.EyeData.bin`,
+	blinkPath: `/static/AvatarAnimation/data/${baseDraw}.BlinkData.bin`,
+	headPath: `/static/AvatarAnimation/data/${baseDraw}.HeadData.bin`,
+	timePath: `/static/AvatarAnimation/data/${baseDraw}.TimeData.bin`,
+	exper: js_vars.experimental,
+	sess: js_vars.session_id,
+	play: js_vars.player_id,
+	rNum: js_vars.round,
+	rStart: js_vars.roundStart,
+	mType: js_vars.match_type
+	}, [offscreen]);
+		
+//	console.log("✅ Init message sent")
+
+window.addEventListener("resize", () => {
+	const rect = canvas.getBoundingClientRect();
+
+	worker.postMessage({
+		resize: true,
+		containerWidth: Math.round(rect.width),
+		containerHeight: Math.round(rect.height),
+		dpr: window.devicePixelRatio
+	});
+
+	updateDisplay(currentOffer, opponentOffer);
+});
+
+</script>
+
+
+
+{% endblock %}

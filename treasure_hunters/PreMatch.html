@@ -1,0 +1,477 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block content %}
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#_otree-title:empty {
+  display: none !important;
+}
+
+.otree-timer {
+  display: none;
+}
+
+.otree-body.container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+#preBargainContainer {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.85);   
+	z-index: 999;	 
+}
+
+#preBargainBox {
+	position: relative;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	text-align: center;
+	height: 90%;
+	width: 90%;
+	max-width: 100vh;
+	background: rgba(255, 255, 255, 0.95);
+	border: 2px solid #333;
+	border-radius: 1vh;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+.hidden {
+	display: none;
+}
+
+#preBargainLabel {
+	position: relative;
+	height: 15.5%;
+	width: 90%;
+	max-width: 100vh;
+	transform: translateX(-50%);
+	left: 50%;
+	font-size: 2.5vh;
+	border-bottom: 0.05em solid #ccc;
+	box-sizing: border-box;
+}
+
+
+.slider-question {
+	position: relative;
+	height: 24%;
+	width: 80%;
+	max-width: 100vh;
+	transform: translateX(-50%);
+	left: 50%;
+	font-size: 2.5vh;	
+}
+
+.slider-label {
+	position: relative;
+	width: 100%;
+	height: 52.5%;
+}
+
+.centered-text {
+	position: relative;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);	
+}
+
+.slider-container {
+	position: relative;
+	width: 100%;
+	height: 22.5%;
+}
+
+.question-track {
+	position: absolute;
+	height: 1vh;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	border-radius: 1vh;
+}
+
+.fill-right {
+	position: absolute;
+	top: 0;
+	right: 0;
+	height: 100%;
+	background: #FFA600; /* same as thumb */
+	border-radius: 1vh;
+}
+
+.question-thumb {
+	position: absolute;
+	height: 4vh;
+	aspect-ratio: 1 / 1;
+	background: #FFA600;
+	border: 0.15em solid white;
+	border-radius: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	cursor: pointer;
+}
+
+.value-display {
+	position: relative;
+	width: 100%;
+	height: 25%;
+}
+
+
+.value-display .centered-text {
+	position: absolute;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	white-space: nowrap;
+}
+
+#submit-container {
+	height:12.5%;
+}
+
+.submit-button {
+	position:relative;
+	transform: translateY(-50%);
+	top: 50%;
+}
+
+#submitBtn {
+	font-size: 2.5vh;
+	padding: 0.5vh 2vh;
+	cursor: pointer;
+}
+
+
+</style>
+
+
+<div id="preBargainContainer">
+	<div id="preBargainBox">
+		<div id="preBargainLabel">
+			<div class="centered-text"><em>Antes de negociar, responde estas 3 preguntas. <strong>Utiliza el mouse</strong> para <strong>mover los indicadores</strong>, luego presiona <strong>'Continuar'</strong>.</em></div>
+		</div>
+
+		{{ if conflict == "high" }}
+
+			<div id="dictatorQuestion" class="slider-question">
+			
+				<div class="slider-label">
+					<div class="centered-text"><strong>(1)</strong> Si <strong>tú repartes</strong> el tesoro, ¿<strong>cuánto tomarías</strong> para tí?</div>
+				</div>
+				
+				<div class="slider-container">
+					<div id="track-dictator" class="question-track" style="width: 100%; background: rgba(204, 204, 204, 1); z-index: 2;">
+						<div class="fill-right" id="fill-dictator" style="z-index: 3;"></div>
+					</div>
+					<div id="thumb-dictator" class="question-thumb" style="z-index: 4;"></div>
+				</div>
+				
+				<div class="value-display">
+					<div class="centered-text" id="value-dictator"><strong>${{ relative_max }}</strong></div>
+				</div>
+				
+			</div>
+			
+			<div id="fairnessQuestion" class="slider-question">
+			
+				<div class="slider-label">
+					<div class="centered-text"><strong>(2)</strong> Si un <strong>juez reparte</strong> el tesoro, ¿cuánto crees que <strong>te daría</strong>?</div>
+				</div>
+
+				<div class="slider-container">
+					<div id="track-fairness" class="question-track" style="width: 100%; background: rgba(204, 204, 204, 1); z-index: 2;">
+						<div class="fill-right" id="fill-fairness" style="z-index: 3;"></div>
+					</div>
+					<div id="thumb-fairness" class="question-thumb" style="z-index: 4;"></div>
+				</div>
+				
+				<div class="value-display">
+					<div class="centered-text" id="value-fairness"><strong>${{ relative_max }}</strong></div>
+				</div>
+				
+			</div>
+			
+			<div id="reservationQuestion" class="slider-question">
+			
+				<div class="slider-label">
+					<div class="centered-text">
+					<strong>(3)</strong> ¿Cuál es la <strong>menor cantidad</strong> que aceptarías?<br>
+					Si recibes menos, prefieres que el <strong>tesoro se pierda</strong>.
+					</div>
+				</div>
+				
+				<div class="slider-container">
+					<div id="track-reservation" class="question-track" style="width: 100%; background: rgba(204, 204, 204, 1); z-index: 2;">
+						<div class="fill-right" id="fill-reservation" style="z-index: 3;"></div>
+					</div>
+					<div id="thumb-reservation" class="question-thumb" style="z-index: 4;"></div>
+				</div>
+				
+				<div class="value-display">
+					<div class="centered-text" id="value-reservation"><strong>${{ relative_max }}</strong></div>
+				</div>
+				
+			</div>
+
+		{{ else }} <!-- Conflict is low -->
+
+			<div id="dictatorQuestion" class="slider-question">
+			
+				<div class="slider-label">
+					<div class="centered-text"><strong>(1)</strong> Si <strong>tú repartes</strong> el tesoro, ¿<strong>cuánto tomarías</strong> para tí?</div>
+				</div>
+				
+				<div class="slider-container">
+					<div id="dictatorBackground" class="question-track" style="width: 100%; background: rgba(204, 204, 204, 0.3); z-index: 1;"></div>
+					<div id="track-dictator" class="question-track" style="width: {{ restriction_percentage }}; background: rgba(204, 204, 204, 1); z-index: 2;">
+						<div class="fill-right" id="fill-dictator" style="z-index: 3;"></div>
+					</div>
+					<div id="thumb-dictator" class="question-thumb" style="z-index: 4;"></div>
+				</div>
+
+				<div class="value-display">
+					<div class="centered-text" id="value-dictator"><strong>${{ relative_max }}</strong></div>
+				</div>
+				
+			</div>
+			
+			<div id="fairnessQuestion" class="slider-question">
+			
+				<div class="slider-label">
+					<div class="centered-text"><strong>(2)</strong> Si un <strong>juez reparte</strong> el tesoro, ¿cuánto crees que <strong>te daría</strong>?</div>
+				</div>
+
+				<div class="slider-container">
+					<div id="fairnessBackground" class="question-track" style="width: 100%; background: rgba(204, 204, 204, 0.3); z-index: 1;"></div>
+					<div id="track-fairness" class="question-track" style="width: {{ restriction_percentage }}; background: rgba(204, 204, 204, 1); z-index: 2;">
+						<div class="fill-right" id="fill-fairness" style="z-index: 3;"></div>
+					</div>
+					<div id="thumb-fairness" class="question-thumb" style="z-index: 4;"></div>
+				</div>
+				
+				<div class="value-display">
+					<div class="centered-text" id="value-fairness"><strong>${{ relative_max }}</strong></div>
+				</div>
+				
+			</div>
+
+			<div id="reservationQuestion" class="slider-question">
+			
+				<div class="slider-label">
+					<div class="centered-text">
+					<strong>(3)</strong> ¿Cuál es la <strong>menor cantidad</strong> que aceptarías?<br>
+					Si recibes menos, prefieres que el <strong>tesoro se pierda</strong>.
+					</div>
+				</div>
+				
+				<div class="slider-container">
+					<div id="reservationBackground" class="question-track" style="width: 100%; background: rgba(204, 204, 204, 0.3); z-index: 1;"></div>
+					<div id="track-reservation" class="question-track" style="width: {{ restriction_percentage }}; background: rgba(204, 204, 204, 1); z-index: 2;">
+						<div class="fill-right" id="fill-reservation" style="z-index: 3;"></div>
+					</div>
+					<div id="thumb-reservation" class="question-thumb" style="z-index: 4;"></div>
+				</div>
+				
+				<div class="value-display">
+					<div class="centered-text" id="value-reservation"><strong>${{ relative_max }}</strong></div>
+				</div>
+				
+			</div>
+
+		{{ endif }}
+
+		<div id="submit-container">
+			<form id="submitForm" method="post">
+				<input type="hidden" name="dictator_share" id="input-dictator" style="visibility: hidden; height: 0; position: absolute;">
+				<input type="hidden" name="fairness_share" id="input-fairness" style="visibility: hidden; height: 0; position: absolute;">
+				<input type="hidden" name="reservation_share" id="input-reservation" style="visibility: hidden; height: 0; position: absolute;">
+				<button id="submitBtn" type="submit" class="submit-button">Continuar</button>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+
+
+const dictatorThumb = document.getElementById("thumb-dictator")
+const fairnessThumb = document.getElementById("thumb-fairness")
+const reservationThumb = document.getElementById("thumb-reservation")
+
+const minOffer = js_vars.min_offer;
+const maxOffer = js_vars.max_offer;
+const relativeMax = js_vars.relative_max
+const relativeMin = maxOffer - relativeMax
+const step = js_vars.slider_step
+
+let dictatorValue = relativeMax
+let fairnessValue = relativeMax
+let reservationValue = relativeMax
+
+function positionThumb(value) {
+	return ((maxOffer - value) / (maxOffer - minOffer)) * 100;
+}
+
+function fillPerc(value) {
+	return ((relativeMax - value) / (relativeMax - relativeMin)) * 100;
+}
+
+function updateQuestion(question, value, display, fillBar) {
+	const thumbPercent = positionThumb(value);
+	question.style.left = `${thumbPercent}%`;
+	display.style.left = `${thumbPercent}%`;
+	display.innerHTML = `<strong>${formatCLP(value)}</strong>`;
+	fillBar.style.width = `${100 - fillPerc(value)}%`;
+}
+
+function makeDraggable(thumb, track, onChange) {
+	let isDragging = false;
+
+	thumb.addEventListener("mousedown", (e) => {
+		e.preventDefault();
+		isDragging = true;
+	});
+
+	document.addEventListener("mousemove", (e) => {
+		if (!isDragging) return;
+		const rect = track.getBoundingClientRect();
+		let x = e.clientX - rect.left;
+		x = Math.max(0, Math.min(x, rect.width));
+		const percent = x / rect.width;
+		const value = Math.round((1 - percent) * (relativeMax - relativeMin) / step) * step + relativeMin;
+		onChange(value);
+	});
+
+	document.addEventListener("mouseup", () => {
+		isDragging = false;
+	});
+}
+
+// Hook up each thumb
+makeDraggable(
+	dictatorThumb,
+	document.getElementById("track-dictator"),
+	(value) => {
+		dictatorValue = Math.min(relativeMax, Math.max(relativeMin, value));
+		updateQuestion(
+			dictatorThumb, 
+			dictatorValue, 
+			document.getElementById("value-dictator"),
+			document.getElementById("fill-dictator")
+		);
+	}
+);
+
+makeDraggable(
+	fairnessThumb,
+	document.getElementById("track-fairness"),
+	(value) => {
+		fairnessValue = Math.min(relativeMax, Math.max(relativeMin, value));
+		updateQuestion(
+			fairnessThumb, 
+			fairnessValue, 
+			document.getElementById("value-fairness"),
+			document.getElementById("fill-fairness")
+	);
+	}
+);
+
+makeDraggable(
+	reservationThumb,
+	document.getElementById("track-reservation"),
+	(value) => {
+		reservationValue = Math.min(relativeMax, Math.max(relativeMin, value));
+		updateQuestion(
+			reservationThumb, 
+			reservationValue, 
+			document.getElementById("value-reservation"),
+			document.getElementById("fill-reservation")
+		);
+	}
+);
+
+function formatCLP(value) {
+	return '$' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+document.getElementById("submitBtn").addEventListener("click", function () {
+			
+	document.getElementById("input-dictator").value = dictatorValue;
+	document.getElementById("input-fairness").value = fairnessValue;
+	document.getElementById("input-reservation").value = reservationValue;
+
+});
+
+
+document.addEventListener("DOMContentLoaded", () => {
+		
+	updateQuestion(
+		dictatorThumb, 
+		dictatorValue, 
+		document.getElementById("value-dictator"), 
+		document.getElementById("fill-dictator"),
+	);
+	updateQuestion(
+		fairnessThumb, 
+		fairnessValue, 
+		document.getElementById("value-fairness"), 
+		document.getElementById("fill-fairness"),
+	);
+	updateQuestion(
+		reservationThumb, 
+		reservationValue, 
+		document.getElementById("value-reservation"), 
+		document.getElementById("fill-reservation"),
+	);
+		
+});
+
+window.addEventListener('resize', () => {
+
+	updateQuestion(
+		dictatorThumb, 
+		dictatorValue, 
+		document.getElementById("value-dictator"), 
+		document.getElementById("fill-dictator"),
+	);
+	updateQuestion(
+		fairnessThumb, 
+		fairnessValue, 
+		document.getElementById("value-fairness"), 
+		document.getElementById("fill-fairness"),
+	);
+	updateQuestion(
+		reservationThumb, 
+		reservationValue, 
+		document.getElementById("value-reservation"), 
+		document.getElementById("fill-reservation"),
+	);
+});
+
+
+</script>
+
+{% endblock %}
+

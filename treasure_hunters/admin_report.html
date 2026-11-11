@@ -1,0 +1,104 @@
+<h3>Advance Requests</h3>
+
+<div id="requests-container">
+  {{ for round_num, groups in requests.items }}
+    <h4>Round {{ round_num }}</h4>
+
+    {{ if groups }}
+      <ul>
+        {{ for gid, info in groups.items }}
+          <li>
+            Group {{ gid }} (Room: {{ info.room|default("?") }}, Page: {{ info.currentPage|default("?") }})
+
+            <button onclick="allow({{ round_num }}, {{ gid }})">
+              Advance
+            </button>
+          </li>
+        {{ endfor }}
+      </ul>
+    {{ else }}
+      <p>No requests</p>
+    {{ endif }}
+  {{ endfor }}
+</div>
+
+<script id="requests-data" type="application/json">
+  {{ requests|json }}
+</script>
+
+<script>
+  // Supplied by the administrator and kept only in page memory.
+  let REST_KEY = null;
+
+  let requests = JSON.parse(
+    document.getElementById("requests-data").textContent
+  );
+
+  const REFRESH_INTERVAL = 2000;
+  let refreshTimer = setInterval(refreshData, REFRESH_INTERVAL);
+
+  function pauseRefresh() {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+
+  function resumeRefresh() {
+    if (!refreshTimer) {
+      refreshTimer = setInterval(refreshData, REFRESH_INTERVAL);
+    }
+  }
+
+  async function refreshData() {
+    try {
+      const res = await fetch(window.location.href, { cache: "no-store" });
+      const html = await res.text();
+
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const newContainer = doc.getElementById("requests-container");
+      if (!newContainer) return;
+
+      document.getElementById("requests-container").replaceWith(newContainer);
+
+      const newScript = doc.getElementById("requests-data");
+      if (newScript) {
+        requests = JSON.parse(newScript.textContent);
+      }
+    } catch (e) {
+    }
+  }
+  
+  function allow(roundNum, groupId) {
+    if (!REST_KEY) {
+      REST_KEY = window.prompt("Enter OTREE_REST_KEY to advance participants:");
+      if (!REST_KEY) return;
+    }
+    
+    pauseRefresh()
+    
+    const codes = requests[roundNum][groupId].participantCodes;
+    const promises = [];
+
+    for (const code of codes) {
+      promises.push(
+        fetch(`/api/participant_vars/${code}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "otree-rest-key": REST_KEY,
+          },
+          body: JSON.stringify({
+            vars: { advanceAllowed: true }
+          })
+        })
+      );
+    }
+    Promise.all(promises)
+      .finally(() => {
+        refreshData().finally(() => {
+          document.querySelectorAll("button").forEach(b => b.disabled = false);
+          resumeRefresh();
+        });
+      });
+  }
+
+</script>

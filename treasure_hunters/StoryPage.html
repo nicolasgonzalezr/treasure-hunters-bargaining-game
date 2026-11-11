@@ -1,0 +1,391 @@
+{% extends "global/Page.html" %}
+{% block content %}
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#_otree-title:empty {
+  display: none !important;
+}
+
+.otree-timer {
+  display: none;
+}
+
+.otree-body.container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.scene {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 75vh;     /* responsive width */
+  width: auto;
+  max-height: 720px;    /* cap at native size */
+  aspect-ratio: 16 / 9;  /* enforce 1280x720 shape */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  border-radius: 0px;
+}
+
+.scene-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.scene-layer.visible {
+  opacity: 1;
+}
+
+.dialogue {
+  position: absolute;
+  left: 20%;
+  top: 70%;
+  bottom: auto;
+  width: 80%;
+  max-width: 80%;
+  font-family: Georgia, serif;
+  font-size: 4vh;
+  color: white;
+  overflow: hidden;
+  white-space: normal;
+  line-height: 1.4;
+  background-color: transparent;
+  padding: 3.5% 3.5%;
+  text-align: justify;
+}
+
+.dialogue.opponent {
+  left: 10%;
+  width: 70%;
+}
+
+.overlay-text {
+  position: absolute;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.steal-pouch {
+  animation: stealPouch 1.5s linear forwards;
+  z-index: 12 !important;
+}
+
+@keyframes stealPouch {
+  0% {
+  top: 0%;
+  opacity: 1;
+  }
+  100% {
+  top: 100%;
+  opacity: 1;
+  }
+}
+
+.pouch-jump {
+  animation: pouchJump 1s linear forwards;
+  z-index: 12 !important;
+}
+
+@keyframes pouchJump {
+  0% {
+  top: 0%;
+  opacity: 1;
+  }
+  100% {
+  top: 100%;
+  opacity: 1;
+  }
+}
+
+@keyframes hoverUpDown {
+  0%, 100% {
+  transform: translate(-50%, -50%) translateY(0);
+  }
+  50% {
+  transform: translate(-50%, -50%) translateY(-10%);
+  }
+}
+
+.gold-text {
+  font-size: 5vh;
+  top: 35%;
+  left: 47%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  line-height: 1.4;
+  color: #f5b041;
+  text-shadow: 1px 1px 3px #000;
+  animation: hoverUpDown 1.5s ease-in-out infinite;
+}
+
+.crystal-text {
+  font-size: 5vh;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  line-height: 1.4;
+  color: #4ED6FF;
+  text-shadow: 1px 1px 3px #000;
+  animation: hoverUpDown 1.5s ease-in-out infinite;
+}
+
+#advanceBtn {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 3vh;
+  font-family: Georgia, serif;
+  font-weight: bold;
+  background-color: #2D6CDF;
+  padding: 2.5vh 4vh;
+  color: white;
+  border: none;
+  border-radius: 1vh;
+  margin-top: 5vh;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+@keyframes shake {
+  0% { transform: translate(0px, 0px) rotate(0deg); }
+  10% { transform: translate(-2px, 2px) rotate(-1deg); }
+  20% { transform: translate(-4px, -1px) rotate(1deg); }
+  30% { transform: translate(2px, 2px) rotate(0deg); }
+  40% { transform: translate(1px, -1px) rotate(1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  60% { transform: translate(-3px, 1px) rotate(0deg); }
+  70% { transform: translate(2px, 1px) rotate(-1deg); }
+  80% { transform: translate(-1px, -2px) rotate(1deg); }
+  90% { transform: translate(2px, 2px) rotate(0deg); }
+  100% { transform: translate(0px, 0px) rotate(-1deg); }
+}
+
+#layer-collapse {
+  animation: shake 0.5s infinite;
+}
+
+#layer-background.shake {
+  animation: shake 0.5s infinite;
+}
+
+#advanceBtn:hover {
+  background-color: #1F54B5;
+}
+
+.hidden {
+  display: none;
+}
+
+</style>
+
+<div class="scene">
+  <img id="layer-background" class="scene-layer" style="z-index:1">
+  <img id="layer-collapse" class="scene-layer" style="z-index:2">
+  <img id="layer-treasure" class="scene-layer" style="z-index:3">
+  <img id="layer-threat" class="scene-layer" style="z-index:4">
+  <img id="layer-player" class="scene-layer" style="z-index:5">
+  <img id="layer-opponent" class="scene-layer" style="z-index:6">
+  <img id="layer-pouch-object" class="scene-layer" style="z-index:7">
+  <img id="layer-pouch-indicator" class="scene-layer" style="z-index:8">
+  <img id="layer-dialogue" class="scene-layer" style="z-index:9">
+  <div id="treasure-indicator" class="overlay-text" style="z-index:10"></div>
+  <div id="dialogueBox" class="dialogue" style="z-index:11"></div>
+</div>
+
+<button id="advanceBtn" type="button" class="hidden">Siguiente</button>
+
+<form id="storyForm" method="post">
+  <button id="submitBtn" type="submit" class="hidden"></button>
+</form>
+
+
+<script>
+
+// PRELOAD ALL IMAGES FOR THE STORY
+js_vars.paths.forEach(path => {
+  const img = new Image();
+  img.src = '/static/' + path;
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+
+  const scenes = js_vars.scenes;
+      
+  // console.log(JSON.stringify(scenes, null, 2));
+      
+  let currentSceneIndex = 0;
+
+  const layers = {
+    background: document.getElementById("layer-background"),
+    player_character: document.getElementById("layer-player"),
+    opponent_character: document.getElementById("layer-opponent"), 
+    pouch_indicator: document.getElementById("layer-pouch-indicator"),
+    pouch_object: document.getElementById("layer-pouch-object"),
+    treasure: document.getElementById("layer-treasure"),
+    threat: document.getElementById("layer-threat"),
+    dialogue_box: document.getElementById("layer-dialogue"),
+    collapse: document.getElementById("layer-collapse")
+  };
+
+  const dialogueBox = document.getElementById("dialogueBox");
+  const advanceBtn = document.getElementById("advanceBtn");
+  const submitBtn = document.getElementById("submitBtn");
+
+
+  function showScene(scene) {
+      
+    lastClick = 0;
+    
+    // console.log("🖼 Showing scene:", currentSceneIndex);
+    
+    // Adjust dialogue box layout for red background
+    if (scene.dialogue_box && scene.dialogue_box.includes('opponent')) {
+      dialogueBox.classList.add('opponent');
+    } else {
+      dialogueBox.classList.remove('opponent');
+    }
+    
+    for (let key in layers) {  
+      if (scene[key]) {
+        layers[key].classList.remove('visible');
+        void layers[key].offsetWidth; // force reflow
+        layers[key].src = "/static/" + scene[key];
+        layers[key].classList.add('visible');
+        layers[key].style.visibility = 'visible';
+      } else {
+        layers[key].style.visibility = 'hidden';
+        layers[key].classList.remove('visible');
+      }
+    }
+
+    // Scene-specific trigger
+    if (scene.sceneidx === 6) { // REPLACE WITH OCTOPUS ANIMATION
+      if (layers['threat'].src && layers['pouch_object'].src) {
+      layers['threat'].classList.add("steal-pouch");
+      setTimeout(() => {
+        layers['pouch_object'].classList.add("pouch-jump");
+      }, 750);
+          
+      } else {
+      currentSceneIndex++;
+      showScene(scenes[currentSceneIndex]);
+      return;
+      }
+    }
+        
+    if (scene['treasure_indicator']) {
+      const indicator = document.getElementById("treasure-indicator");
+      if (js_vars.scenario === 'underwater'){
+        indicator.classList.remove('crystal-text');
+        indicator.classList.add('gold-text');
+      } else if (js_vars.scenario === 'space') {
+        indicator.classList.remove('gold-text');
+        indicator.classList.add('crystal-text');
+      } else {
+        indicator.classList.add('gold-text');
+      }
+    }
+    
+    document.getElementById("treasure-indicator").innerHTML = scene.treasure_indicator || "";
+    
+    if (layers['collapse'].src) {
+      layers['background'].classList.add('shake');
+    }
+    
+    
+    // Typing animation
+    dialogueBox.textContent = "";
+    advanceBtn.classList.add("hidden");
+
+    const raw = scene.dialogue || "";
+    const stripped = raw.replace(/<[^>]+>/g, '');
+    let i = 0;
+    let displayText = '';
+
+    function typeChar() {
+      if (i < stripped.length) {
+        const char = stripped[i++];
+        displayText += char;
+        dialogueBox.textContent = displayText;
+
+        let delay = 35;
+        const prev = stripped[i - 2] + char;
+        if (['. ', '! ', '? '].includes(prev)) delay = 350;
+        else if (prev.endsWith(', ')) delay = 175;
+
+        setTimeout(typeChar, delay);
+      } else {
+        dialogueBox.innerHTML = raw;
+        if (!scene.auto_advance) {
+          advanceBtn.textContent = scene.button_text;
+          advanceBtn.classList.remove("hidden");
+        }
+      }
+    }
+
+    typeChar();
+
+    if (scene.auto_advance && scene.timeout > 0) {
+      setTimeout(() => {
+        // console.log("⏰ Timeout expired, attempting nextScene()");
+        nextScene();
+      }, scene.timeout);
+    }
+  }
+
+  function nextScene() {  
+    currentSceneIndex++;
+    // console.log("⏭ Calling nextScene from index:", currentSceneIndex);
+    if (currentSceneIndex >= (scenes.length - 1)) {
+      // console.log("Submitting form");
+      submitBtn.click();
+    } else {
+      showScene(scenes[currentSceneIndex]);
+    }
+  }
+
+  advanceBtn.addEventListener("click", () => {
+    const now = Date.now();
+    if (now - lastClick > 250) {
+      lastClick = now;
+      nextScene();
+    }
+  });
+
+
+  showScene(scenes[0]);
+});
+
+</script>
+
+{% endblock %}
+
+
+
+
+

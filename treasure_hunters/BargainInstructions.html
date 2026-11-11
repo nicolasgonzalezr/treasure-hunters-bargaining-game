@@ -1,0 +1,929 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block content %}
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#_otree-title:empty {
+  display: none !important;
+}
+
+.otree-timer {
+  display: none;
+}
+
+.otree-body.container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.scene {
+  display: flow-root;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100vh;			  /* responsive width */
+  width: auto;
+  max-width: 100vw;
+  aspect-ratio: 16 / 9;	 /* enforce 1280x720 shape */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  border-radius: 0px;
+}
+
+.scene-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.scene-layer.visible {
+  opacity: 1;
+}
+
+.overlay-text {
+  position: absolute;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+#sceneOverlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(255, 255, 255, 0.9);
+	pointer-events: none;
+}
+
+
+#avatarWrapper {
+  position: relative;
+  height: 62.5vh;
+  aspect-ratio: 1/1;
+  width: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  overflow: hidden;
+  top: 0%;
+}
+
+#avatarContainer {
+  position: relative;
+  top: 48%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 110%;
+  aspect-ratio: 1/1;
+  width: auto;
+  filter: drop-shadow(0 7px 28px rgba(0,0,0,0.3));
+}
+
+#timer {
+	position: absolute;
+	top:50%;
+	left:50%;
+	width:105%;
+	height:105%;
+	transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+#timerBackground {
+	fill: transparent;
+	stroke: #27ae60;
+	stroke-width: 5;
+	stroke-dasharray: 339.292;
+}
+
+#timerBackground.highlight {
+	fill: white;
+}
+
+#timerProgress {
+	fill: none;
+	stroke: white;
+	stroke-width: 5.2;
+	stroke-linecap: butt;
+	stroke-dasharray: 339.292;
+	transition: stroke-dashoffset 1s linear;
+}
+
+/*
+#timerText {
+	background: transparent;
+	fill: black;
+	font-family: Consolas, 'Lucida Console', 'Courier New', monospace;
+	font-weight: bold;
+	transform: rotate(90deg);
+	transform-origin: center;
+} */
+
+#sliderGroup {
+	position: relative;
+	background: transparent;
+	pointer-events: auto;
+}
+
+#slider-wrapper {
+	position: relative;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 75%;
+	height: 20vh;
+	margin-top: 2.5vh;
+}
+
+#custom-slider-container {
+	position: relative;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 75%;
+	height: 100%;
+}
+
+.track {
+	position: absolute;
+	height: 2vh;
+	background: #C8C4C1;
+	width: 100%;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	border-radius: 1vh;
+}
+
+#sliderTrack {
+	transition: background 0.5s ease;
+}
+
+#sliderTrack.slider-agree {
+	background: #27ae60 !important;
+}
+
+.thumb, .opponent-thumb {
+	position: absolute;
+	height: 7vh;
+	width: 7vh;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.thumb {
+	color: #2e86c1;
+}
+
+.opponent-thumb {
+	color: #CD5C5C;
+}
+
+.thumb svg, 
+.opponent-thumb svg {
+	width: 100%;
+	height: 100%;
+	display: block;
+	object-fit: contain;
+	fill: currentColor;
+}
+
+#sliderThumb.thumb-agree {
+	transition: color 0.5s ease;
+	color: #27ae60 !important;
+}
+
+#opponentThumb.thumb-agree {
+	transition: color 0.5s ease;
+	color: #27ae60 !important;
+}
+
+#sliderThumb.highlight, #opponentThumb.highlight {
+	transform: translate(-50%, -50%) scale(1.5);
+}
+
+.marker {
+	position: absolute;
+	font-size: 2.75vh;
+	color: #333;
+	white-space: nowrap;
+}
+
+#playerMarker {
+	top: 0%;
+}
+
+#opponentMarker {
+	bottom: 0%;
+}
+
+#playerMarker.highlight {
+	font-size: 4vh;
+}
+
+#opponentMarker.highlight {
+	font-size: 4vh;
+	transform: translateX(-50%);
+}
+
+.arrow {
+	position: absolute;
+	transform: translateX(-50%);
+}
+
+.label {
+	margin-left: 2.5vh; /* adjust as needed */
+}
+
+.gain-player {
+	color: #2e86c1;
+}
+
+.gain-partner {
+	color: #CD5C5C;
+}
+
+#buttonControls {
+	position: relative;
+	left: 50%;
+	transform: translateX(-50%);
+	height: 10vh;
+	width: 100vh;
+	max-width: 100vw;
+	text-align: center;
+	margin-top: 2.5vh;
+}
+
+#buttonControls button {
+	font-size: 3.5vh;
+	color: black;
+	padding: 1vh 2.5vh;
+	margin: 0 2.5vh; /* this adds horizontal spacing */
+	cursor: pointer;
+}
+
+#instructionContainer {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 100vw;
+	height: 100vh;
+	background: rgba(0, 0, 0, 0.85);   
+	z-index: 999;
+/*	display: none; */
+}
+
+#instructionContainer.highlight{
+	background: transparent;
+}
+
+#instructionBox {
+	position: relative;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	height: 40vh;
+	width: 100vh;
+	background: rgba(255, 255, 255, 0.95);
+	border: 2px solid #333;
+	border-radius: 1vh;
+	padding: 2vh;
+	font-size: 3.5vh;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+#instructionText {
+	text-align: center;
+}
+
+.instruction-buttons {
+	margin-top: 5vh;
+	display: flex;
+	gap: 2vh;
+	justify-content: center;
+}
+
+.instruction-buttons button {
+	font-size: 3vh;
+	margin-left: 1vh;
+	padding: 0.5vh 2vh;
+	cursor: pointer;
+}
+
+.hidden {
+	display: none;
+}
+
+.highlight {
+	z-index: 1000 !important;
+}
+
+.background {
+	background: white !important;
+}
+
+
+</style>
+
+<div class="scene">
+	<img id="layer-background" class="scene-layer" style="z-index:1">
+	<img id="layer-collapse" class="scene-layer" style="z-index:2">
+	<img id="layer-treasure" class="scene-layer" style="z-index:3">
+	<img id="layer-threat" class="scene-layer" style="z-index:4">
+	<img id="layer-player" class="scene-layer" style="z-index:5">
+	<img id="layer-opponent" class="scene-layer" style="z-index:6">
+	<img id="layer-pouch-object" class="scene-layer" style="z-index:7">
+	<img id="layer-pouch-indicator" class="scene-layer" style="z-index:8">
+	<img id="layer-dialogue" class="scene-layer" style="z-index:9">
+	<div id="treasure-indicator" class="overlay-text gold-text" style="z-index:10"></div>
+	<div id="dialogueBox" class="dialogue" style="z-index:11"></div>
+
+	<div id="sceneOverlay" style="z-index:12"></div>
+
+	<div id="avatarWrapper" style="z-index:13">
+		<div id="timer" style="z-index:14">
+			<svg width="100%" height="100%" viewBox="0 0 120 120">
+				<circle cx="60" cy="60" r="54" id="timerBackground"/>
+				<circle cx="60" cy="60" r="54" id="timerProgress" stroke-dashoffset="339.292"/>
+				{#<text x="50%" y="50%" font-size="28" text-anchor="middle" dominant-baseline="middle" id="timerText">{{ timer }}</text>#}
+			</svg>
+		</div>
+		<div id="avatarContainer" style="z-index:15"></div>
+	</div>
+
+	<div id="sliderGroup" style="z-index: 13;">
+		<div id="slider-wrapper">
+		
+			<div id="custom-slider-container">
+			{{ if conflict == "high" }}
+				<div class="track" id= "sliderTrack" style="width: 100%; background: #C8C4C1; z-index: 14;"></div>
+				<div class="opponent-thumb" id="opponentThumb" style="z-index: 15;">
+					{{ include 'global/pouch_thumb.svg' }}
+				</div>
+				<div class="thumb" id="sliderThumb" style="z-index: 16;">
+					{{ include 'global/pouch_thumb.svg' }}
+				</div>
+
+			{{ else }} <!-- Conflict is low -->
+				<div class="track" id= "backgroundTrack" style="width: 100%; background: rgba(204, 204, 204, 0.5); z-index: 13;"></div>
+				<div class="track" id= "sliderTrack" style="width: {{ restriction_percentage }}; background: #C8C4C1; z-index:14;"></div>
+				<div class="opponent-thumb" id="opponentThumb" style="height: 9vh; width: 9vh; z-index: 15;">
+					{{ include 'global/hand_thumb.svg' }}
+				</div>
+				<div class="thumb" id="sliderThumb" style="height: 9vh; width: 9vh; z-index: 16;">
+					{{ include 'global/hand_thumb.svg' }}
+				</div>
+
+			{{ endif }}
+			</div>
+			
+			<div class="marker" id="playerMarker" style="z-index: 13;">
+				<span class="arrow">▼</span>
+				<span class="label" id="playerLabel"></span>
+			</div>
+			
+			<div class="marker" id="opponentMarker" style="z-index: 13;">
+				<span class="arrow">▲</span>
+				<span class="label" id="opponentLabel"></span>
+			</div>
+			
+		</div>
+		
+		<div id="buttonControls" style="z-index: 13;">
+			<button type="button" onclick="adjustOffer(-1)"><strong>← Pedir</strong></button>
+			<button type="button" onclick="adjustOffer(1)"><strong>Ceder →</strong></button>
+		</div>
+	</div>
+
+	<div id="instructionContainer">
+		<div id="instructionBox">
+			<div id="instructionText"></div>
+			<div class="instruction-buttons">
+				<button id="prevBtn" type="button" onclick="prevStep()">Anterior</button>
+				<button id="nextBtn" type="button" onclick="nextStep()">Siguiente</button>
+			</div>
+		</div>
+	</div>
+
+</div>
+
+<form id="advanceForm" method="post" style="display: none;" >
+	<button type="submit" style="display: none;" id="submitBtn"></button>
+</form>
+
+<script>
+
+// CACHE IMAGES (PRELOAD)
+js_vars.paths.forEach(path => {
+  const img = new Image();
+  img.src = '/static/' + path;
+});
+
+const sliderWrapper = document.getElementById("slider-wrapper");
+const sliderContainer = document.getElementById("custom-slider-container");
+const thumb = document.getElementById("sliderThumb");
+const opponentThumb = document.getElementById("opponentThumb");
+const playerMarker = document.getElementById("playerMarker");
+const opponentMarker = document.getElementById("opponentMarker");
+
+const minOffer = js_vars.min_offer;
+const maxOffer = js_vars.max_offer;
+const relativeMax = js_vars.relative_max
+const relativeMin = maxOffer - relativeMax
+const conflict = js_vars.conflict
+
+const step = js_vars.slider_step;
+
+let currentOffer = js_vars.my_offer;
+let opponentOffer = js_vars.opponent_offer;
+
+function positionThumb(value) {
+	return ((maxOffer - value) / (maxOffer - minOffer)) * 100;
+}
+
+function positionMarker(value) {
+	const relative = ((maxOffer - value) / (maxOffer - minOffer)) - 0.5;
+	const sliderWidth = sliderContainer.offsetWidth;
+	const wrapperWidth = sliderWrapper.offsetWidth;
+
+	const offset = relative * sliderWidth / wrapperWidth;
+	return 50 + offset * 100;
+}
+
+function updateDisplay(playerVal, opponentVal) {
+
+	const thumbPercent = positionThumb(playerVal);
+	const opponentThumbPercent = positionThumb(opponentVal);
+			
+	const markerPercent = positionMarker(playerVal);
+	const opponentMarkerPercent = positionMarker(opponentVal);
+
+	thumb.style.left = `${thumbPercent}%`;
+	opponentThumb.style.left = `${opponentThumbPercent}%`;
+	playerMarker.style.left = `${markerPercent}%`;
+	opponentMarker.style.left = `${opponentMarkerPercent}%`;
+
+	document.getElementById("playerLabel").innerHTML = `
+		Tú (<span class="gain-player">${formatCLP(playerVal)}</span> | <span class="gain-partner">${formatCLP(maxOffer - playerVal)}</span>)`;
+			
+	document.getElementById("opponentLabel").innerHTML = `
+		RoBotín 🤖 (<span class="gain-player">${formatCLP(opponentVal)}</span> | <span class="gain-partner">${formatCLP(maxOffer - opponentVal)}</span>)`;
+}
+
+function adjustOffer(direction) {
+	const proposed = currentOffer - direction * step;
+			
+	if (conflict == "high") {
+		currentOffer = Math.min(maxOffer, Math.max(opponentOffer, proposed));
+	} else {
+		currentOffer = Math.min(relativeMax, Math.max(opponentOffer, proposed));
+	}
+
+	updateDisplay(currentOffer, opponentOffer);
+			
+	if (currentOffer === opponentOffer) {
+		startCountdown();
+	} else {
+		stopCountdown();
+	}
+		
+}
+
+function simulateAgreement() {
+	const interval = 400;  // ms delay between steps
+			
+	const intervalId = setInterval(() => {
+		if (opponentOffer >= currentOffer) {
+			clearInterval(intervalId);
+			startCountdown();  // trigger agreement visual
+			return;
+		}
+		opponentOffer += step;
+		updateDisplay(currentOffer, opponentOffer);
+	}, interval);
+}
+
+
+function startCountdown() {
+	//console.log("⏳ startCountdown triggered");
+	document.getElementById("sliderTrack").classList.add("slider-agree");
+	document.getElementById("sliderThumb").classList.add("thumb-agree");
+	document.getElementById("opponentThumb").classList.add("thumb-agree");
+}
+
+function stopCountdown() {
+	document.getElementById("sliderTrack").classList.remove("slider-agree");
+	document.getElementById("sliderThumb").classList.remove("thumb-agree");
+	document.getElementById("opponentThumb").classList.remove("thumb-agree");
+}
+
+let currentInstruction = 0;
+let instructions;
+
+if (conflict == "high") {
+	instructions = [
+		{
+			text: "A continuación te daremos las <strong>instrucciones</strong> para la negociación.",
+			highlight: [],
+			background: [],
+			top: "50vh"
+		},
+		{
+			text: "Jugarás una partida de dos rondas con una persona del grupo <strong>seleccionada al azar</strong>.",
+			highlight: [],
+			background: [],
+			top: "50vh"
+		},
+		{
+			text: "Así se verá la pantalla de juego.",
+			highlight: [".scene-layer", "#sceneOverlay", "#sliderGroup", "#avatarWrapper", "#instructionContainer"],
+			background: [],
+			top: "50vh"
+		},
+		{
+			text: "En el centro de la pantalla verás el avatar (👤) de la persona con la que estás jugando.",
+			highlight: ["#avatarWrapper", "#timerBackground"],
+			background: [],
+			top: "75vh"
+		},
+		{
+			text: "Podrás ver las <strong>caras y expresiones</strong> de la otra persona, pero no sabrás quién es.",
+			highlight: ["#avatarWrapper", "#timerBackground"],
+			background: [],
+			top: "75vh"
+		},
+		{
+			text: "<strong>Tampoco podrán hablar</strong> entre ustedes.",
+			highlight: ["#avatarWrapper", "#timerBackground"],
+			background: [],
+			top: "75vh"
+		},
+		{
+			text: "La persona con la que juegas también verá tus expresiones en su pantalla de juego.",
+			highlight: ["#avatarWrapper", "#timerBackground"],
+			background: [],
+			top: "75vh"
+		},
+		{
+			text: "Esta es una ronda de práctica en la que jugarás con un <strong>computador</strong> (🤖), así que los avatares no estarán animados.",
+			highlight: ["#avatarWrapper", "#timerBackground"],
+			background: [],
+			top: "75vh",
+			onEnter: resetTimer
+		},
+		{
+			text: "Alrededor del avatar verás una barra verde que indica el <strong>tiempo que les queda</strong> para llegar a un acuerdo.",
+			highlight: ["#avatarWrapper", "#timerBackground"],
+			background: [],
+			top: "75vh",
+			onEnter: startTimer
+		},
+		{
+			text: "La negociación <strong>se termina</strong> cuando la barra verde desaparece.",
+			highlight: ["#avatarWrapper", "#timerBackground"],
+			background: [],
+			top: "75vh",
+		},
+		{
+			text: "Si no han llegado a un acuerdo antes de que eso ocurra, la estación explota y <strong>pierden el tesoro</strong>.",
+			highlight: ["#avatarWrapper", "#timerBackground"],
+			background: [],
+			top: "75vh"
+		},
+		{
+			text: "La barra de juego muestra las propuestas sobre cómo distribuirse el tesoro.",
+			highlight: ["#sliderGroup"],
+			background: ["#sliderGroup"],
+			top: "25vh",
+			onEnter: resetTimer
+		},
+		{
+			text: "Tu bolsa es la de <span style='color:#2e86c1'>color azul</span>.",
+			highlight: ["#sliderGroup", "#sliderThumb"],
+			background: ["#sliderGroup"],
+			top: "25vh"
+		},
+		{
+			text: "Sobre tu bolsa, verás en <span style='color:#2e86c1; font-weight:bold;'>azul</span> el monto del tesoro que <span style='color:#2e86c1; font-weight:bold;'>pides para ti</span>, y en <span style='color:#CD5C5C; font-weight:bold;'>rojo</span> lo que le <span style='color:#CD5C5C; font-weight:bold;'>ofreces al otro</span>.",
+			highlight: ["#sliderGroup", "#playerMarker"],
+			background: ["#sliderGroup"],
+			top: "25vh"
+		},
+		{
+			text: "La bolsa del otro jugador es la de <span style='color:#CD5C5C;'>color rojo</span>.",
+			highlight: ["#sliderGroup", "#opponentThumb"],
+			background: ["#sliderGroup"],
+			top: "25vh"
+		},
+		{
+			text: "Bajo su bolsa, verás en <span style='color:#CD5C5C; font-weight:bold;'>rojo</span> el monto del tesoro que <span style='color:#CD5C5C; font-weight:bold;'>pide para él</span>, y en <span style='color:#2e86c1; font-weight:bold;'>azul</span> lo que te <span style='color:#2e86c1; font-weight:bold;'>ofrece a ti</span>.",
+			highlight: ["#sliderGroup", "#opponentMarker"],
+			background: ["#sliderGroup"],
+			top: "25vh"
+		},
+		{
+			text: "Presiona los botones con flechas (&#8592; &#8594;) para ajustar tu oferta. <strong>Inténtalo ahora</strong>.",
+			highlight: ["#sliderGroup"],
+			background: ["#sliderGroup"],
+			top: "25vh"
+		},
+		{
+			text: "Cuando las <strong>bolsas se encuentren</strong> habrán llegado a un <strong>acuerdo</strong> y la barra de juego se iluminará de color verde.",
+			highlight: ["#sliderGroup"],
+			background: ["#sliderGroup"],
+			top: "25vh",
+			onEnter: simulateAgreement
+		},
+		{
+			text: "La negociación <strong>se termina</strong> luego de <strong>3 segundos</strong> de acuerdo.",
+			highlight: ["#sliderGroup"],
+			background: ["#sliderGroup"],
+			top: "25vh"
+		},
+		{
+			text: "Vamos con la <strong>ronda de práctica</strong>, esta ronda <strong>no influye</strong> sobre tu pago final 🤑.",
+			highlight: [],
+			background: [],
+			top: "50vh"
+		},
+		{
+			text: "Si tienes alguna duda, levanta la mano <strong>ahora</strong> para recibir asistencia de nuestro equipo 🙋.",
+			highlight: [],
+			background: [],
+			top: "50vh"
+		},
+		{
+			text: "Si has comprendido estas instrucciones, presiona 'Finalizar' para ir a la práctica de negociación.",
+			highlight: [],
+			background: [],
+			top: "50vh"
+		}
+	];
+} else {
+	instructions = [
+		{
+			text: "Una instrucción final.",
+			highlight: [],
+			background: [],
+			top: "50vh"
+		},
+		{
+			text: "En algunas rondas del juego <strong>perderán su bolsa</strong> 🐙.",
+			highlight: ["#sliderGroup"],
+			background: ["#sliderGroup"],
+			top: "25vh"
+		},
+		{
+			text: "Cuando esto ocurra, ningún jugador podrá cargar el tesoro completo.",
+			highlight: ["#sliderGroup"],
+			background: ["#sliderGroup"],
+			top: "25vh"
+		},
+		{
+			text: `El tesoro sigue siendo <strong>${formatCLP(maxOffer)}</strong>, pero en sus manos pueden llevar <strong>${formatCLP(relativeMax)}</strong> como máximo.`,
+			highlight: ["#sliderGroup"],
+			background: ["#sliderGroup"],
+			top: "25vh"
+		},
+		{
+			text: "La barra de juego se ajustará para reflejar esta <strong>restricción</strong>.",
+			highlight: ["#sliderGroup"],
+			background: ["#sliderGroup"],
+			top: "25vh"
+		},
+		{
+			text: "En lugar de una bolsa, verás una <strong>mano</strong> en la barra de juego.",
+			highlight: ["#sliderGroup", "#sliderThumb", "#opponentThumb"],
+			background: ["#sliderGroup"],
+			top: "25vh"
+		},
+		{
+			text: "Todo lo demás funciona igual que antes.",
+			highlight: ["#sliderGroup"],
+			background: ["#sliderGroup"],
+			top: "25vh",
+			onEnter: simulateAgreement
+		},
+		{
+			text: "Esta es la <strong>última ronda</strong> de práctica, y <strong>tampoco influye</strong> sobre tu pago final 🤑.",
+			highlight: [],
+			background: [],
+			top: "50vh"
+		},
+		{
+			text: "Si tienes alguna duda, levanta la mano <strong>ahora</strong> para recibir asistencia de nuestro equipo 🙋.",
+			highlight: [],
+			background: [],
+			top: "50vh"
+		},
+		{
+			text: "Si has comprendido estas instrucciones, presiona 'Finalizar' para ir a la práctica de negociación.",
+			highlight: [],
+			background: [],
+			top: "50vh"
+		}
+	];
+}
+
+
+
+function showInstruction(index) {
+	const container = document.getElementById('instructionContainer');
+	const box = document.getElementById('instructionBox');
+	const text = document.getElementById('instructionText');
+	if (index < 0 || index >= instructions.length) return;
+
+	// Remove old highlights
+	document.querySelectorAll('.highlight').forEach(el => {
+		el.classList.remove('highlight');
+	});
+	document.querySelectorAll('.background').forEach(el => {
+		el.classList.remove('background');
+	});
+
+	// Apply new highlights
+	const instruction = instructions[index];
+	instruction.highlight.forEach(selector => {
+		document.querySelectorAll(selector).forEach(el => {
+			el.classList.add('highlight');
+		});
+	});
+
+	instruction.background.forEach(selector => {
+		document.querySelectorAll(selector).forEach(el => {
+			el.classList.add('background');
+		});
+	});
+			
+	box.style.top = instruction.top || "50vh";
+	text.innerHTML = instruction.text;
+//	container.classList.remove('hidden'); #USED FOR INITIAL DELAY, REMOVE
+			
+	// Hide or show previous button
+	if (index === 0) {
+		prevBtn.classList.add('hidden');
+	} else {
+		prevBtn.classList.remove('hidden');
+	}
+			
+	// Trigger the onEnter callback if present
+	if (typeof instruction.onEnter === "function") {
+		instruction.onEnter();
+	}
+			
+}
+
+function nextStep() {
+	if (currentInstruction < instructions.length - 1) {
+		currentInstruction++;
+		if (currentInstruction === instructions.length - 1) {
+			nextBtn.textContent = 'Finalizar';
+		}
+		showInstruction(currentInstruction);
+	} else if (currentInstruction === instructions.length - 1){
+		document.getElementById('submitBtn').click()
+	}
+}
+
+function prevStep() {
+	if (currentInstruction > 0) {
+		currentInstruction--;
+		document.getElementById('nextBtn').textContent = 'Siguiente';
+		showInstruction(currentInstruction);
+	}
+}
+
+function formatCLP(value) {
+	return '$' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+// TIMER LOGIC
+let duration, circle, fullDashArray, remaining, interval = null;
+//let timerText;
+
+function updateTimerDisplay() {
+//		const mins = String(Math.floor(remaining / 60)).padStart(2, '0');
+//		const secs = String(remaining % 60).padStart(2, '0');
+//	   timerText.textContent = `${mins}:${secs}`;
+
+		const offset = fullDashArray * ((remaining-1) / duration);
+		
+		circle.setAttribute('stroke-dashoffset', offset.toString());
+		
+		// console.log(circle.getAttribute('stroke-dashoffset'));
+	}
+
+	function startTimer() {
+		clearInterval(interval);
+		updateTimerDisplay();
+		interval = setInterval(() => {
+			remaining -= 1;
+			if (remaining <= 0) {
+				clearInterval(interval);
+				timerText.textContent = "00:00";
+			} else {
+				updateTimerDisplay();
+			}
+		}, 1000);
+	}
+
+	function resetTimer() {
+		clearInterval(interval);
+		remaining = duration + 1;
+		circle.setAttribute('stroke-dashoffset', fullDashArray.toString());
+		updateTimerDisplay();
+	}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+
+	const scene = js_vars.scene;
+
+	const layers = {
+		background: document.getElementById("layer-background"),
+		player_character: document.getElementById("layer-player"),
+		opponent_character: document.getElementById("layer-opponent"), 
+		pouch_indicator: document.getElementById("layer-pouch-indicator"),
+		pouch_object: document.getElementById("layer-pouch-object"),
+		treasure: document.getElementById("layer-treasure"),
+		threat: document.getElementById("layer-threat"),
+		dialogue_box: document.getElementById("layer-dialogue"),
+		collapse: document.getElementById("layer-collapse")
+	};
+
+	function showScene(scene) {
+		
+		for (let key in layers) {		 
+			if (scene[key]) {
+				layers[key].classList.remove('visible');
+				void layers[key].offsetWidth; // force reflow
+				layers[key].src = "/static/" + scene[key];
+				layers[key].classList.add('visible');
+				layers[key].style.visibility = 'visible';
+			} else {
+				layers[key].style.visibility = 'hidden';
+				layers[key].classList.remove('visible');
+			}
+		}
+			
+		document.getElementById("treasure-indicator").innerHTML = scene.treasure_indicator || "";
+			
+	}
+			
+	showScene(scene);
+		
+	updateDisplay(currentOffer, opponentOffer); // existing line for slider
+		
+	const prevBtn = document.getElementById('prevBtn');
+	const nextBtn = document.getElementById('nextBtn');
+
+	// Timer setup
+	duration = js_vars.timeout_seconds;
+//	timerText = document.getElementById("timerText");
+	circle = document.getElementById("timerProgress");
+			
+	fullDashArray = 339.292;	
+	remaining = duration;
+			
+	//console.log(circle.getAttribute('stroke-dashoffset'));
+			
+	showInstruction(currentInstruction);		
+});
+
+window.addEventListener('resize', () => {
+	updateDisplay(currentOffer, opponentOffer);
+});
+
+const avatarPath = "/static/global/avatars/NeutralAvatar.glb";
+
+</script>
+
+<script src="/static/AvatarAnimation/assets/StaticAvatar.js"></script>
+
+{% endblock %}
+

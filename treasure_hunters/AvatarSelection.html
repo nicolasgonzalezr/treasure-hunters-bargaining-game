@@ -1,0 +1,346 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{{ block content }}
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#_otree-title:empty {
+  display: none !important;
+}
+
+.otree-timer {
+  display: none;
+}
+
+.otree-body.container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+#instructionContainer {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.95);   
+  z-index: 999;
+/*  display: none; */
+}
+
+#instructionContainer.highlight{
+  background: transparent;
+}
+
+#instructionBox {
+  position: relative;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 40vh;
+  width: 100vh;
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid #333;
+  border-radius: 1vh;
+  padding: 2vh;
+  font-size: 3.5vh;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+#instructionText {
+  text-align: center;
+}
+
+.instruction-buttons {
+  margin-top: 5vh;
+  display: flex;
+  gap: 2vh;
+  justify-content: center;
+}
+
+.instruction-buttons button {
+  font-size: 3vh;
+  margin-left: 1vh;
+  padding: 0.5vh 2vh;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
+
+.highlight {
+  z-index: 1000 !important;
+}
+
+
+#avatarCarousel {
+  position: absolute;
+  height: 40vh;
+  width: 80vw;
+  top: 70%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display:flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.carouselImg{
+  height: 100%;
+  width: 100%;
+  display: block;
+  object-fit: cover;
+  transition: opacity 0.4s ease-in-out;
+}
+
+#carouselCurrent{
+  height: 100%;
+  width: auto;
+  aspect-ratio: 1/1;
+  box-shadow: 0 0 100px #2e86c1;
+  z-index: 2;
+}
+
+.carouselSide{
+  height: 75%;
+  width: auto;
+  aspect-ratio: 1/1;
+  opacity: 0.5;
+  z-index: 1;
+}
+
+.carouselBtn{
+  font-size: 10vh;
+  color: white;
+  background: transparent;
+  padding: 2vh 2.5vh;
+/*  margin: 0vh 5vh; /* this adds horizontal spacing */
+  cursor: pointer;
+}
+
+</style>
+
+<div id="instructionContainer">
+  <div id="instructionBox">
+    <div id="instructionText"></div>
+    <div class="instruction-buttons">
+      <button id="prevBtn" type="button" onclick="prevStep()">Anterior</button>
+      <button id="nextBtn" type="button" onclick="nextStep()">Siguiente</button>
+    </div>
+  </div>
+</div>
+
+<div id="avatarCarousel">
+  <button id="prevAvatarBtn" class="carouselBtn" type="button" onclick="prevAvatar()">←</button>
+
+  <div id="carouselPrev" class="carouselSide">
+  <img id="prevImg" class="carouselImg">
+  </div>
+  <div id="carouselCurrent">
+  <img id="currentImg" class="carouselImg">
+  </div>
+  <div id="carouselNext" class="carouselSide">
+  <img id="nextImg" class="carouselImg">
+  </div>
+
+  <button id="nextAvatarBtn" class="carouselBtn" type="button" onclick="nextAvatar()">→</button>
+</div>
+
+<form id="advanceForm" method="post" class="hidden">
+  <button type="submit" class="hidden" id="submitBtn"></button>
+</form>
+
+<script>
+
+let prevBtn, nextBtn;
+let prevImg, currentImg, nextImg;
+
+const avatarNames = js_vars.avatarNames;
+const totalAvatars = avatarNames.length;
+
+// CACHE IMAGES (PRELOAD)
+avatarNames.forEach(name => {
+  const img = new Image();
+  img.src = "/static/global/avatars/jpg/" + name;
+});
+
+let currentInstruction = 0;
+
+const instructions = [
+  {
+    text: "¡Buen trabajo! Ahora vamos en serio 😎.",
+    top: "50vh",
+    highlight: []
+  },
+  {
+    text: "Lo que hagas a partir de ahora <strong>si contará</strong> para tu pago final 💵.",
+    top: "50vh",
+    highlight: []
+  },
+  {
+    text: "Selecciona tu avatar para el juego.",
+    top: "25vh",
+    highlight: ["#avatarCarousel"]
+  },
+  {
+    text: `Usa los botones con flechas (← →) para buscar un personaje.`,
+    top: "25vh",
+    highlight: ["#avatarCarousel"]
+  },
+  {
+    text: "El personaje que elijas te representará en la negociación.",
+    top: "25vh",
+    highlight: ["#avatarCarousel"]
+  },
+  {
+    text: "La persona con la que jugarás verá a tu avatar en su pantalla 👀, pero no sabrá que se trata de ti 🕵️.",
+    top: "25vh",
+    highlight: ["#avatarCarousel"]
+  },
+  {
+    text: "Si tienes alguna duda, levanta la mano <strong>ahora</strong> para recibir asistencia de nuestro equipo 🙋.",
+    top: "25vh",
+    highlight: ["#avatarCarousel"]
+  },
+  {
+    text: "Si ya decidiste, presiona <strong>'Elegir'</strong> para visualizar tu avatar. Esta decisión es final, <strong>no podrás hacer cambios</strong> más adelante.",
+    top: "25vh",
+    highlight: ["#avatarCarousel"]
+  },
+];
+
+function showInstruction(index) {
+  const container = document.getElementById('instructionContainer');
+  const box = document.getElementById('instructionBox');
+  const text = document.getElementById('instructionText');
+  if (index < 0 || index >= instructions.length) return;
+
+  // Remove old highlights
+  document.querySelectorAll('.highlight').forEach(el => {
+    el.classList.remove('highlight');
+  });
+
+  // Apply new highlights
+  const instruction = instructions[index];
+  instruction.highlight.forEach(selector => {
+    document.querySelectorAll(selector).forEach(el => {
+      el.classList.add('highlight');
+    });
+  });
+
+  box.style.top = instruction.top || "50vh";
+  text.innerHTML = instruction.text;
+//  container.classList.remove('hidden'); #USED FOR INITIAL DELAY, REMOVE
+      
+  // Hide or show previous button
+  if (index === 0) {
+    prevBtn.classList.add('hidden');
+  } else {
+    prevBtn.classList.remove('hidden');
+  }
+}
+
+let avatarAcked = false;
+
+function liveRecv(data) {
+  // Keep your existing handlers too; just add this:
+  if (data.ack === 'AvatarID') {
+    avatarAcked = true;
+    document.getElementById('submitBtn').click();
+  }
+}
+
+function nextStep() {
+  if (currentInstruction < instructions.length - 1) {
+    currentInstruction++;
+    if (currentInstruction === instructions.length - 1) {
+      nextBtn.textContent = 'Elegir';
+    }
+    showInstruction(currentInstruction);
+  } else if (currentInstruction === instructions.length - 1){
+    const selected = avatarNames[avatarIndex];
+    const selectedID = selected.match(/avatar_(\d+)_/)[1];
+
+    nextBtn.disabled = true;
+    prevBtn.disabled = true;
+
+    liveSend({ AvatarID: selectedID });
+
+    // Fallback: if ack never comes, submit anyway after 1s
+    setTimeout(() => {
+      if (!avatarAcked) {
+        document.getElementById('submitBtn').click();
+      }
+    }, 3000);  }
+}
+
+function prevStep() {
+  if (currentInstruction > 0) {
+    currentInstruction--;
+    document.getElementById('nextBtn').textContent = 'Siguiente';
+    showInstruction(currentInstruction);
+  }
+}
+
+let avatarIndex = 0;
+
+function updateCarousel(avatarIndex) {
+  const prevIdx = (avatarIndex - 1 + totalAvatars) % totalAvatars; // WRAP INDEX
+  const nextIdx = (avatarIndex + 1 + totalAvatars) % totalAvatars;
+
+  prevImg.src = "/static/global/avatars/jpg/" + avatarNames[prevIdx]
+  currentImg.src = "/static/global/avatars/jpg/" + avatarNames[avatarIndex]
+  nextImg.src = "/static/global/avatars/jpg/" + avatarNames[nextIdx]
+}
+
+function prevAvatar() {
+  avatarIndex = (avatarIndex - 1 + totalAvatars) % totalAvatars;
+  updateCarousel(avatarIndex);
+}
+
+function nextAvatar() {
+  avatarIndex = (avatarIndex + 1 + totalAvatars) % totalAvatars;
+  updateCarousel(avatarIndex);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  prevBtn = document.getElementById('prevBtn');
+  nextBtn = document.getElementById('nextBtn');
+
+  prevImg = document.getElementById('prevImg');
+  currentImg = document.getElementById('currentImg');
+  nextImg = document.getElementById('nextImg');
+
+  showInstruction(currentInstruction);
+  updateCarousel(avatarIndex);
+});
+
+</script>
+
+
+{{ endblock }}
+
+

@@ -1,0 +1,574 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{% block content %}
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#_otree-title:empty {
+  display: none !important;
+}
+
+.otree-timer {
+  display: none;
+}
+
+.otree-body.container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+#sceneOverlay {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 1);
+}
+
+#sliderGroup {
+  position: relative;
+  background: white;
+  pointer-events: auto;
+}
+
+#timerContainer {
+	position: relative;
+	top:0;
+	left:50%;
+	width:75%;
+	height:3vh;
+  margin-bottom: 2.5vh;
+  transform: translateX(-50%);
+}
+
+#timerBar {
+	position: relative;
+  background: #27ae60;
+	top:0;
+	left:0;
+	width:100%;
+	height:100%;
+	transition: width 1s linear;
+}
+
+#slider-wrapper {
+	position: relative;
+  top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 75%;
+	height: 20vh;
+	background: transparent;
+}
+
+#custom-slider-container {
+	position: relative;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 75%;
+	height: 100%;
+}
+
+.track {
+	position: absolute;
+	height: 2vh;
+	background: #C8C4C1;
+	width: 100%;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	border-radius: 1vh;
+}
+
+#sliderTrack {
+  transition: background 0.5s ease;
+}
+
+#sliderTrack.slider-agree {
+  background: #27ae60 !important;
+}
+
+.thumb, .opponent-thumb {
+	position: absolute;
+	height: 7vh;
+	width: 7vh;
+	top: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.thumb {
+	color: #2e86c1;
+}
+
+.opponent-thumb {
+	color: #CD5C5C;
+}
+
+.thumb svg, 
+.opponent-thumb svg {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+	fill: currentColor;
+}
+
+#sliderThumb.thumb-agree {
+	transition: color 0.5s ease;
+	color: #27ae60 !important;
+}
+
+#opponentThumb.thumb-agree {
+	transition: color 0.5s ease;
+	color: #27ae60 !important;
+}
+
+.marker {
+	position: absolute;
+	font-size: 2.75vh;
+	color: #333;
+	white-space: nowrap;
+}
+
+#playerMarker {
+  top: 0%;
+}
+
+#opponentMarker {
+  bottom: 0%;
+}
+
+.arrow {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.label {
+  margin-left: 2.5vh; /* adjust as needed */
+}
+
+.gain-player {
+  color: #2e86c1;
+}
+
+.gain-partner {
+  color: #CD5C5C;
+}
+
+#buttonControls {
+	position: relative;
+	left: 50%;
+	transform: translateX(-50%);
+	height: 10vh;
+	width: 100vh;
+	max-width: 100vw;
+	text-align: center;
+	background: transparent;
+	margin-top: 2vh;
+}
+
+#buttonControls button {
+	font-size: 3.5vh;
+	color: black;
+	padding: 1vh 2.5vh;
+	margin: 0 2.5vh; /* this adds horizontal spacing */
+	cursor: pointer;
+}
+
+#kickOff {
+  position: absolute;
+  top: 0%;
+  left: 0%;
+  height: 100vh;
+  width: 100vw;
+  background: rgba(0,0,0,0.90);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+#kickOffNumber {
+  font-size: 50vh;
+  font-weight: bolder;
+  line-height: 1;
+  color: #27ae60;
+  transition: opacity 0.4s ease-in-out;
+}
+
+#kickOffInstruction {
+  margin-top: 3vh;
+  font-size: 7vh;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+}
+
+#lookUpPrompt {
+	position:relative;
+	height:64.5vh;
+	width:100vw;
+	background:rgba(0,0,0,1);
+	display: flex;
+  flex-direction: column;
+	justify-content: center;
+	align-items: center;
+  gap: 4vh;
+	font-weight: bold;
+	text-align: center;
+	color: white;
+	z-index: 2000;
+}
+
+#lookUpPrompt span {
+  display: block;
+  line-height: 1;
+}
+
+.hidden {
+  display: none !important;
+}
+
+</style>
+
+<div id="kickOff">
+  <div id="kickOffNumber"></div>
+  <div id="kickOffInstruction">Retiren el separador ahora</div>
+</div>
+
+<div id="sceneOverlay" style="z-index:12">
+
+  <div id="sliderGroup" style="z-index: 13;">
+
+    <div id="timerContainer">
+      <div id="timerBar"></div>
+    </div>
+
+    <div id="slider-wrapper">
+
+      <div id="custom-slider-container">
+      {{ if conflict == "high" }}
+        <div class="track" id= "sliderTrack" style="width: 100%; background: #C8C4C1; z-index: 14;"></div>
+        <div class="opponent-thumb" id="opponentThumb" style="z-index: 15;">
+          {{ include 'global/pouch_thumb.svg' }}
+        </div>
+        <div class="thumb" id="sliderThumb" style="z-index: 16;">
+          {{ include 'global/pouch_thumb.svg' }}
+        </div>
+
+      {{ else }} <!-- Conflict is low -->
+        <div class="track" id= "backgroundTrack" style="width: 100%; background: rgba(204, 204, 204, 0.5); z-index: 13;"></div>
+        <div class="track" id= "sliderTrack" style="width: {{ restriction_percentage }}; background: #C8C4C1; z-index:14;"></div>
+        <div class="opponent-thumb" id="opponentThumb" style="height: 9vh; width: 9vh; z-index: 15;">
+          {{ include 'global/hand_thumb.svg' }}
+        </div>
+        <div class="thumb" id="sliderThumb" style="height: 9vh; width: 9vh; z-index: 16;">
+          {{ include 'global/hand_thumb.svg' }}
+        </div>
+
+      {{ endif }}
+      </div>
+      
+      <div class="marker" id="playerMarker" style="z-index: 13;">
+        <span class="arrow">▼</span>
+        <span class="label" id="playerLabel"></span>
+      </div>
+      
+      <div class="marker" id="opponentMarker" style="z-index: 13;">
+        <span class="arrow">▲</span>
+        <span class="label" id="opponentLabel"></span>
+      </div>
+      
+    </div>
+      
+  <div id="buttonControls" style="z-index: 13;">
+    <button type="button" onclick="adjustOffer(-1)"><strong>← Pedir</strong></button>
+    <button type="button" onclick="adjustOffer(1)"><strong>Ceder →</strong></button>
+  </div>
+
+  </div>
+
+  <div id="lookUpPrompt" class="hidden">
+  <span style="font-size: 30vh">👀</span>
+  <span style="font-size: 7vh">¡Mira al otro jugador!</span>
+  </div>
+
+</div>
+
+<form id="advanceForm" method="post" style="display: none;" >
+  <button type="submit" style="display: none;" id="advanceButton"></button>
+</form>
+
+<script>
+
+const sliderWrapper = document.getElementById("slider-wrapper");
+const sliderContainer = document.getElementById("custom-slider-container");
+const thumb = document.getElementById("sliderThumb");
+const opponentThumb = document.getElementById("opponentThumb");
+const playerMarker = document.getElementById("playerMarker");
+const opponentMarker = document.getElementById("opponentMarker");
+
+const minOffer = js_vars.min_offer;
+const maxOffer = js_vars.max_offer;
+
+const step = js_vars.slider_step;
+
+let currentOffer = js_vars.my_offer;
+let opponentOffer = js_vars.opponent_offer;
+
+const opponentLabel = js_vars.opponent_label;
+
+function positionThumb(value) {
+  return ((maxOffer - value) / (maxOffer - minOffer)) * 100;
+}
+
+function positionMarker(value) {
+  const relative = ((maxOffer - value) / (maxOffer - minOffer)) - 0.5;
+  const sliderWidth = sliderContainer.offsetWidth;
+  const wrapperWidth = sliderWrapper.offsetWidth;
+
+  const offset = relative * sliderWidth / wrapperWidth;
+  return 50 + offset * 100;
+}
+
+function updateDisplay(playerVal, opponentVal) {
+
+  const thumbPercent = positionThumb(playerVal);
+  const opponentThumbPercent = positionThumb(opponentVal);
+      
+  const markerPercent = positionMarker(playerVal);
+  const opponentMarkerPercent = positionMarker(opponentVal);
+
+  thumb.style.left = `${thumbPercent}%`;
+  opponentThumb.style.left = `${opponentThumbPercent}%`;
+  playerMarker.style.left = `${markerPercent}%`;
+  opponentMarker.style.left = `${opponentMarkerPercent}%`;
+
+  document.getElementById("playerLabel").innerHTML = `
+    Tú (<span class="gain-player">${formatCLP(playerVal)}</span> | <span class="gain-partner">${formatCLP(maxOffer - playerVal)}</span>)`;
+      
+  document.getElementById("opponentLabel").innerHTML = `
+    Jugador ${opponentLabel} (<span class="gain-player">${formatCLP(opponentVal)}</span> | <span class="gain-partner">${formatCLP(maxOffer - opponentVal)}</span>)`;
+      
+}
+
+function sendOfferUpdate(newVal) {
+  liveSend({ action: "update_offer", offer: newVal });
+}
+
+function adjustOffer(direction) {
+  const proposed = currentOffer - direction * step;
+      
+  let clamped = Math.min(maxOffer, Math.max(opponentOffer, proposed));
+    
+  sendOfferUpdate(clamped);  // Always send, even if unchanged
+      
+}
+
+let isAgreementClose = false;
+
+function liveRecv(data) {
+
+  //console.log("🔄 Live message received:", data);
+      
+  if (data.advance === true) {
+    document.getElementById('advanceButton').click();
+    stopPinging();
+  }
+      
+  if (data.agreement_close === true && !isAgreementClose) {
+    //console.log("✅ agreement_close detected – starting ping and countdown");
+    isAgreementClose = true;
+    startCountdown();
+    startPinging();
+  } else if (data.agreement_close !== true && isAgreementClose) {
+    //console.log("❌ agreement broken – stopping ping");
+    isAgreementClose = false;
+    stopPinging();
+    stopCountdown();
+  }
+      
+      
+  if ('my_offer' in data && 'opponent_offer' in data) {
+    currentOffer = data.my_offer;
+    opponentOffer = data.opponent_offer;
+    updateDisplay(currentOffer, opponentOffer);
+  }
+
+}
+
+let pingInterval = null;
+
+function startPinging() {
+  //console.log("📡 startPinging triggered");
+  if (pingInterval === null) {
+    pingInterval = setInterval(() => {
+      //console.log("📤 Sending ping");
+      liveSend({ action: "ping" });
+    }, 1000);
+  }
+}
+
+function stopPinging() {
+  if (pingInterval !== null) {
+    clearInterval(pingInterval);
+    pingInterval = null;
+  }
+}
+
+function startCountdown() {
+  //console.log("⏳ startCountdown triggered");
+  document.getElementById("sliderTrack").classList.add("slider-agree");
+  document.getElementById("sliderThumb").classList.add("thumb-agree");
+  document.getElementById("opponentThumb").classList.add("thumb-agree");
+}
+
+function stopCountdown() {
+  document.getElementById("sliderTrack").classList.remove("slider-agree");
+  document.getElementById("sliderThumb").classList.remove("thumb-agree");
+  document.getElementById("opponentThumb").classList.remove("thumb-agree");
+}
+
+function formatCLP(value) {
+  return '$' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+let timer;
+let timerInterval;
+
+// Timer setup
+const duration = js_vars.timeout_seconds;
+let remaining = duration; 
+
+function updateTimerDisplay() {
+  const percent = 100 * ((remaining-1) / duration);
+  timer.style.width= `${percent}%`;
+}
+
+function startTimer() {
+  updateTimerDisplay();
+
+  timerInterval = setInterval(() => {
+    remaining -= 1;
+    if (remaining <= 0) {
+      clearInterval(timerInterval);
+    } else {
+      updateTimerDisplay();
+    }
+  }, 1000);
+}
+
+let prompt;
+const promptInterval = 15 * 1000; // In ms
+const promptDuration = 3 * 1000; // In ms
+const blinkDuration = 0.35 * 1000 // In ms
+
+function startPrompt() {
+  setTimeout(() => {
+    prompt.classList.remove('hidden');
+    const blink = setInterval(() => {
+    prompt.classList.toggle('hidden');
+    }, blinkDuration)
+    setTimeout(() => {
+    clearInterval(blink);
+    prompt.classList.add('hidden');
+    if (remaining > 30) {
+      startPrompt();
+    }
+    }, promptDuration);
+  }, promptInterval);
+}
+
+// CONNECT WEBSOCKET FUNCTION
+let ws;
+const sessionID = js_vars.session_id;
+const playerID = js_vars.player_id;
+const roundNum = js_vars.round;
+const roundStart = js_vars.round_start;
+const matchType = js_vars.match_type;
+
+function connectWebSocket() {
+  const scheme = self.location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${scheme}://localhost:8001/ws`);
+  
+  ws.onopen = () => {
+  console.log("✅ Worker WebSocket connected");
+  const message = {
+    session: sessionID,
+    player: playerID,
+    roundNum: roundNum,
+    roundStart: roundStart,
+    matchType: matchType
+  };
+  ws.send(JSON.stringify(message));
+  };
+
+  ws.onclose = () => {
+  console.warn("❌ WebSocket disconnected. Reconnecting in 2s...");
+  setTimeout(connectWebSocket, 2000);
+  };
+
+  ws.onerror = (err) => {
+  console.error("WebSocket error:", err);
+  ws.close();
+  };
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  connectWebSocket();
+
+  timer = document.getElementById("timerBar");
+
+  prompt = document.getElementById("lookUpPrompt");
+
+  const kickOff = document.getElementById("kickOff");
+  const kickOffNumbers = document.getElementById("kickOffNumber");
+
+  let kickOffSec = js_vars.kickOff;
+
+  kickOffNumbers.textContent = kickOffSec;
+
+  const kickOffInterval = setInterval(() => {
+    kickOffSec -= 1;
+    if (kickOffSec <= 0) {
+      clearInterval(kickOffInterval);
+      kickOff.classList.add('hidden');
+      startTimer();
+      startPrompt();
+      adjustOffer(0); // Send an opening message to the backend in case agreement has been struck in opening offer
+    } else {
+      kickOffNumbers.textContent = kickOffSec;
+    }
+  }, 1000);
+    
+  updateDisplay(currentOffer, opponentOffer);
+
+});
+
+window.addEventListener('resize', () => {
+  updateDisplay(currentOffer, opponentOffer);
+});
+
+</script>
+
+
+{% endblock %}
+

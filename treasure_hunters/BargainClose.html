@@ -1,0 +1,231 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{{ block content }}
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#_otree-title:empty {
+  display: none !important;
+}
+
+.otree-timer {
+  display: none;
+}
+
+.otree-body.container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+#instructionContainer {
+	position: absolute;
+	top: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 100vw;
+	height: 100vh;
+	background: rgba(0, 0, 0, 0.95);   
+	z-index: 999;
+}
+
+#instructionBox {
+	position: relative;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	height: 40vh;
+	width: 100vh;
+	background: rgba(255, 255, 255, 0.95);
+	border: 2px solid #333;
+	border-radius: 1vh;
+	padding: 2vh;
+	font-size: 3.5vh;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+#instructionText {
+	text-align: center;
+}
+
+.instruction-buttons {
+	margin-top: 5vh;
+	display: flex;
+	gap: 2vh;
+	justify-content: center;
+}
+
+.instruction-buttons button {
+	font-size: 3vh;
+	margin-left: 1vh;
+	padding: 0.5vh 2vh;
+	cursor: pointer;
+}
+
+.hidden {
+	display: none;
+}
+
+.highlight {
+	z-index: 1000 !important;
+}
+
+</style>
+
+<div id="instructionContainer">
+	<div id="instructionBox">
+		<div id="instructionText"></div>
+		<div class="instruction-buttons">
+			<button id="prevBtn" type="button" onclick="prevStep()">Anterior</button>
+			<button id="nextBtn" type="button" onclick="nextStep()">Continuar</button>
+		</div>
+	</div>
+</div>
+
+<form id="advanceForm" method="post" class="hidden">
+	<button type="submit" class="hidden" id="submitBtn"></button>
+</form>
+
+<script>
+
+let prevBtn, nextBtn, instructions;
+
+let currentInstruction = 0;
+
+
+instructions = [
+	{
+		text: "Vuelvan a instalar el separador entre ustedes.",
+		top: "50vh",
+		highlight: []
+	}
+];
+
+
+function showInstruction(index) {
+	const container = document.getElementById('instructionContainer');
+	const box = document.getElementById('instructionBox');
+	const text = document.getElementById('instructionText');
+	if (index < 0 || index >= instructions.length) return;
+
+	// Remove old highlights
+	document.querySelectorAll('.highlight').forEach(el => {
+		el.classList.remove('highlight');
+	});
+
+	// Apply new highlights
+	const instruction = instructions[index];
+	instruction.highlight.forEach(selector => {
+		document.querySelectorAll(selector).forEach(el => {
+			el.classList.add('highlight');
+		});
+	});
+
+	box.style.top = instruction.top || "50vh";
+	text.innerHTML = instruction.text;
+			
+	// Hide or show previous button
+	if (index === 0) {
+		prevBtn.classList.add('hidden');
+	} else {
+		prevBtn.classList.remove('hidden');
+	}
+
+	if (index === instructions.length - 1 && !advanceGranted) {
+		//console.log("No permission yet, advance button locked");
+		nextBtn.classList.add('hidden');
+	}
+}
+
+function nextStep() {
+	if (currentInstruction < instructions.length - 1) {
+		currentInstruction++;
+		if (currentInstruction === instructions.length - 1) {
+			nextBtn.textContent = 'Continuar';
+		}
+		showInstruction(currentInstruction);
+	} else if (currentInstruction === instructions.length - 1){
+		if (advanceGranted) {
+			document.getElementById('submitBtn').click();
+		}
+	}
+}
+
+function prevStep() {
+	if (currentInstruction > 0) {
+		currentInstruction--;
+		nextBtn.textContent = 'Siguiente';
+		nextBtn.classList.remove('hidden');
+		showInstruction(currentInstruction);
+	}
+}
+
+let advanceGranted = true;
+
+let pingInterval = null;
+
+function startPinging() {
+	//console.log("📡 startPinging triggered");
+	if (pingInterval === null) {
+		pingInterval = setInterval(() => {
+			//console.log("📤 Sending ping");
+			liveSend({ action: "ping" });
+		}, 2000);
+	}
+}
+
+function stopPinging() {
+	if (pingInterval !== null) {
+		clearInterval(pingInterval);
+		pingInterval = null;
+	}
+}
+
+function liveRecv(data) {
+
+	//console.log("🔄 Live message received:", data);
+			
+	if (data.advance === true) {
+		advanceGranted = true;
+		nextBtn.classList.remove('hidden');
+		//console.log("Advance granted, begin button unlocked");
+		stopPinging();
+	} else {
+		//console.log("Advance denied, button locked");
+	}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  prevBtn = document.getElementById('prevBtn');
+  nextBtn = document.getElementById('nextBtn');
+
+  showInstruction(currentInstruction);
+  
+  startPinging();
+});
+
+</script>
+
+
+{{ endblock }}
+
+

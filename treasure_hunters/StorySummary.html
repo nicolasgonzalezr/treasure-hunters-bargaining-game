@@ -1,0 +1,224 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{{ block content }}
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#_otree-title:empty {
+  display: none !important;
+}
+
+.otree-timer {
+  display: none;
+}
+
+.otree-body.container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+#instructionContainer {
+	position: absolute;
+	top: 0;
+	width: 100vw;
+	height: 100vh;
+	background: rgba(0, 0, 0, 0.95);   
+	z-index: 999;
+}
+
+#instructionBox {
+	position: relative;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	height: 40vh;
+	width: 100vh;
+	background: rgba(255, 255, 255, 0.95);
+	border: 2px solid #333;
+	border-radius: 1vh;
+	padding: 2vh;
+	font-size: 3.5vh;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+#instructionText {
+	text-align: center;
+}
+
+.instruction-buttons {
+	margin-top: 5vh;
+	display: flex;
+	gap: 2vh;
+	justify-content: center;
+}
+
+.instruction-buttons button {
+	font-size: 3vh;
+	margin-left: 1vh;
+	padding: 0.5vh 2vh;
+	cursor: pointer;
+}
+
+.hidden {
+	display: none;
+}
+
+.highlight {
+	z-index: 1000 !important;
+}
+
+</style>
+
+<div id="instructionContainer">
+	<div id="instructionBox">
+		<div id="instructionText"></div>
+		<div class="instruction-buttons">
+			<button id="prevBtn" type="button" onclick="prevStep()">Anterior</button>
+			<button id="nextBtn" type="button" onclick="nextStep()">Siguiente</button>
+		</div>
+	</div>
+</div>
+
+<form id="advanceForm" method="post" class="hidden">
+	<button type="submit" class="hidden" id="submitBtn"></button>
+</form>
+
+<script>
+
+let prevBtn, nextBtn, instructions;
+
+let currentInstruction = 0;
+
+const conflictHigh = js_vars.conflictHigh;
+const max = js_vars.max;
+
+if (conflictHigh) {
+	instructions = [
+		{
+			text: "En esta ronda jugarán <strong>con su bolsa<strong> 💰.",
+			top: "50vh",
+			highlight: []
+		},
+		{
+			text: `Podrán cargar hasta <strong>${formatCLP(max)}</strong> del tesoro.`,
+			top: "50vh",
+			highlight: []
+		},
+		{
+			text: "Presiona 'Continuar' para ir a la negociación.",
+			top: "50vh",
+			highlight: []
+		}
+	];
+} else {
+	instructions = [
+		{
+			text: "En esta ronda jugarán <strong>sin su bolsa<strong> 🐙👽🤲.",
+			top: "50vh",
+			highlight: []
+		},
+		{
+			text: `Podrán cargar hasta <strong>${formatCLP(max)}</strong> del tesoro.`,
+			top: "50vh",
+			highlight: []
+		},
+		{
+			text: "Presiona 'Continuar' para ir a la negociación.",
+			top: "50vh",
+			highlight: []
+		}
+	];
+}
+
+
+
+function showInstruction(index) {
+	const container = document.getElementById('instructionContainer');
+	const box = document.getElementById('instructionBox');
+	const text = document.getElementById('instructionText');
+	if (index < 0 || index >= instructions.length) return;
+
+	// Remove old highlights
+	document.querySelectorAll('.highlight').forEach(el => {
+		el.classList.remove('highlight');
+	});
+
+	// Apply new highlights
+	const instruction = instructions[index];
+	instruction.highlight.forEach(selector => {
+		document.querySelectorAll(selector).forEach(el => {
+			el.classList.add('highlight');
+		});
+	});
+
+	box.style.top = instruction.top || "50vh";
+	text.innerHTML = instruction.text;
+//	container.classList.remove('hidden'); #USED FOR INITIAL DELAY, REMOVE
+			
+	// Hide or show previous button
+	if (index === 0) {
+		prevBtn.classList.add('hidden');
+	} else {
+		prevBtn.classList.remove('hidden');
+	}
+}
+
+function nextStep() {
+	if (currentInstruction < instructions.length - 1) {
+		currentInstruction++;
+		if (currentInstruction === instructions.length - 1) {
+			nextBtn.textContent = 'Continuar';
+		}
+		showInstruction(currentInstruction);
+	} else if (currentInstruction === instructions.length - 1){
+		document.getElementById('submitBtn').click();
+	}
+}
+
+function prevStep() {
+	if (currentInstruction > 0) {
+		currentInstruction--;
+		nextBtn.textContent = 'Siguiente';
+		nextBtn.classList.remove('hidden');
+		showInstruction(currentInstruction);
+	}
+}
+
+function formatCLP(value) {
+	return '$' + value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  prevBtn = document.getElementById('prevBtn');
+  nextBtn = document.getElementById('nextBtn');
+
+  showInstruction(currentInstruction);
+});
+
+</script>
+
+
+{{ endblock }}
+
+

@@ -1,0 +1,170 @@
+{% extends "global/Page.html" %}
+{% load otree static %}
+
+{{ block content }}
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#_otree-title:empty {
+  display: none !important;
+}
+
+.otree-timer {
+  display: none;
+}
+
+.otree-body.container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+.otree-form select.form-select {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  text-align-last: center;   /* center selected text (Chrome/Edge) */
+}
+
+#questionnaireForm {
+  position: relative;
+  width: 100vh;
+  height: 10vw;
+
+}
+
+.progress-container {
+  width: 100%;
+  background-color: #e0e0e0;
+  height: 2vh;
+  margin-bottom: 2vh;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #007bff;
+  width: 0;
+  transition: width 0.4s ease-in-out;
+}
+
+.formBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 3vh;
+  line-height: 1.4;
+}
+
+.blockInstructions {
+  display: flex;
+  height: 20vh;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 3.25vh;
+  border-bottom: 0.05em solid #ccc;
+}
+
+.question {
+  display: flex;
+  height: 20vh;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+input[type="radio"] {
+  cursor: pointer;
+  transform: scale(1.1);
+}
+
+
+.instruction-buttons {
+  margin-top: 5vh;
+  display: flex;
+  gap: 2vh;
+  justify-content: center;
+}
+
+.instruction-buttons button {
+  font-size: 3vh;
+  margin-left: 1vh;
+  padding: 0.5vh 2vh;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none;
+}
+
+
+</style>
+
+
+<form id="questionnaireForm" method="post">
+
+  <div class="progress-container">
+    <div class="progress-bar" style="width: 10%;"></div>
+  </div>
+      
+  <div id="ocupation" class="formBlock">
+    <div class="question">
+      <div>{{ formfield 'ocupation' }}</div>
+    </div>
+    <div id="studyDepartment" class="question hidden">
+      <div>{{ formfield 'studyDepartment' }}</div>
+    </div>
+    <div class="question">
+      <div>{{ formfield 'participantExperience' }}</div>
+    </div>
+    <div class="question">
+      <div>{{ formfield 'selfAttractiveness' }}</div>
+    </div>
+  </div>
+      
+  <div class="instruction-buttons">
+    <button id="submitBtn" type="submit">Siguiente →</button>
+  </div>
+</form>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const ocupation = document.getElementById('id_ocupation');      // the <select>
+  const studyDepartment = document.getElementById('studyDepartment'); // the div block
+
+  function toggleStudyDepartment() {
+    if (ocupation.value === "Estudiante") {
+      studyDepartment.classList.remove('hidden');
+    } else {
+      studyDepartment.classList.add('hidden');
+    }
+  }
+
+  // run once on load (important if you use back button / refresh)
+  toggleStudyDepartment();
+
+  // run whenever dropdown changes
+  ocupation.addEventListener('change', toggleStudyDepartment);
+});
+</script>
+
+{{ endblock }}
+

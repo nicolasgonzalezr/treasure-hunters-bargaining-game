@@ -1,0 +1,84 @@
+{% extends "global/Page.html" %}
+{% load static %}
+{% block content %}
+
+<style>
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#_otree-title:empty {
+  display: none !important;
+}
+
+.otree-timer {
+  display: none;
+}
+
+.otree-body.container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+#loader {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 2.5vh;
+  color: #444;
+}
+
+</style>
+
+<div id="loader">
+  <div>Loading avatars…</div>
+</div>
+
+<form id="advanceForm" method="post" style="display: none;" >
+	<button type="submit" style="display: none;" id="submitBtn"></button>
+</form>
+
+<script>
+
+const avatarNames = js_vars.avatarNames;
+
+
+function loadAvatars(names) {
+    const base = "/static/global/avatars/glb/";
+
+    const urls = names.map(name => base + name);
+
+    return Promise.all(
+        urls.map(url =>
+            fetch(url, { cache: "force-cache" }).catch(() => null)
+        )
+    );
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    loadAvatars(avatarNames).finally(() => {
+        document.getElementById('submitBtn').click();
+    });
+});
+
+</script>
+
+{% endblock %}
+
+
+
